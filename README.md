@@ -2,7 +2,10 @@
 
 > Modern Mihomo (Clash Meta) client for Windows, macOS and Linux.
 
-[🌐 Official Website](https://classhvverge.org/) • [📖 Wiki](https://github.com/Clashforwinodws/clash-verge-rev-download/wiki)
+[📦 Download](https://github.com/Clashforwinodws/clash-verge-rev-download/releases) •
+[🌐 Website](https://classhvverge.org/) •
+[📖 Wiki](https://github.com/Clashforwinodws/clash-verge-rev-download/wiki) •
+[🚀 Installation Guide](https://github.com/Clashforwinodws/clash-verge-rev-download/wiki/Clash-Verge-Rev-Installation-Guide)
 
 ---
 
