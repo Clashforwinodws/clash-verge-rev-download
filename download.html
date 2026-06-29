@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clash Verge Rev 下载 - 全平台客户端 | 官方下载中心</title>
+    <meta name="description" content="Clash Verge Rev 最新版下载，支持 Windows、macOS、Linux、Android、iOS 全平台。提供官方直链与 GitHub 备用地址，安全、开源、无捆绑。">
+    <meta name="keywords" content="Clash Verge Rev下载, Windows 下载, macOS 下载, Linux 客户端, Android 代理, iOS 代理, GitHub 下载">
+    <link rel="icon" type="image/x-icon" href="./favicon.ico">
+    <link rel="shortcut icon" type="image/x-icon" href="./favicon.ico">
+    <link rel="canonical" href="https://classhvverge.org/download.html">
+    
+    <!-- 结构化数据：SoftwareApplication，帮助 Google 展示丰富摘要 -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Clash Verge Rev",
+      "operatingSystem": "Windows, macOS, Linux, Android, iOS",
+      "applicationCategory": "NetworkApplication",
+      "description": "基于 Clash Meta 内核的开源代理客户端，支持全平台智能流量管理与 TUN 模式。",
+      "downloadUrl": "https://github.com/Clashforwinodws/clash-verge-rev-download/releases",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "author": {
+        "@type": "Organization",
+        "name": "Clash Verge Rev 社区"
+      }
+    }
+    </script>
+
+    <style>
+        :root {
+            --brand-dark: #0f172a;
+            --brand-blue: #3b82f6;
+            --brand-blue-hover: #2563eb;
+            --text-main: #334155;
+            --text-title: #1e293b;
+            --bg-light: #ffffff;
+            --bg-accent: #f8fafc;
+            --border-line: #cbd5e1;
+            --page-card-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+            --page-card-shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.1);
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            color: var(--text-main);
+            line-height: 1.75;
+            background-color: var(--bg-light);
+        }
+
+        /* 头部导航：与首页完全一致 */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem 6%;
+            background: var(--brand-dark);
+            color: #ffffff;
+            position: sticky;
+            top: 0;
+            z-index: 2000;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #ffffff;
+            text-decoration: none;
+            flex-shrink: 0;
+        }
+        .logo img {
+            width: auto;
+            height: 38px;
+            margin-right: 12px;
+            display: block;
+        }
+        .nav-box {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+        nav {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+        }
+        nav a {
+            margin-left: 0.5rem;
+            text-decoration: none;
+            color: #cbd5e1;
+            font-size: 0.93rem;
+            transition: color 0.2s;
+            white-space: nowrap;
+            padding: 0.25rem 0.35rem;
+            border-radius: 4px;
+        }
+        nav a:hover {
+            color: var(--brand-blue);
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        nav a.nav-doc-link {
+            font-weight: 500;
+            color: #e2e8f0;
+        }
+        .github-btn {
+            display: inline-flex;
+            align-items: center;
+            background-color: var(--brand-blue);
+            color: #ffffff;
+            padding: 0.55rem 1.1rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            text-decoration: none;
+            margin-left: 1.5rem;
+            transition: background-color 0.2s;
+            font-weight: 500;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .github-btn:hover {
+            background-color: var(--brand-blue-hover);
+        }
+        .github-btn svg {
+            width: 16px;
+            height: 16px;
+            margin-right: 6px;
+            fill: currentColor;
+        }
+
+        .main-wrapper {
+            max-width: 1260px;
+            margin: 0 auto;
+            padding: 0 6%;
+        }
+
+        /* 下载页面专属 Hero */
+        .download-hero {
+            text-align: center;
+            padding: 4.5rem 0 2.5rem 0;
+        }
+        .download-hero h1 {
+            font-size: 2.8rem;
+            color: var(--brand-dark);
+            line-height: 1.25;
+            margin-bottom: 1rem;
+        }
+        .download-hero p {
+            font-size: 1.15rem;
+            color: #64748b;
+            max-width: 720px;
+            margin: 0 auto 2rem auto;
+        }
+        .version-badge {
+            display: inline-flex;
+            align-items: center;
+            background: #f1f5f9;
+            color: #1e293b;
+            padding: 0.3rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-bottom: 1rem;
+            border: 1px solid #e2e8f0;
+        }
+
+        /* 下载面板：与首页风格相同，但更突出 */
+        .download-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1.75rem;
+            margin-bottom: 2.5rem;
+        }
+        .download-item {
+            background: #ffffff;
+            border: 1px solid var(--border-line);
+            border-top: 4px solid var(--brand-dark);
+            border-radius: 8px;
+            padding: 2.5rem 1.5rem;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .download-item:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+        }
+        .download-item h3 {
+            font-size: 1.5rem;
+            color: var(--brand-dark);
+            margin-bottom: 0.5rem;
+        }
+        .platform-spec {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-bottom: 2rem;
+        }
+        .actions-area {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+        .action-main-link {
+            display: block;
+            background-color: var(--brand-dark);
+            color: #ffffff;
+            padding: 0.8rem 1rem;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: background-color 0.2s;
+        }
+        .action-main-link:hover {
+            background-color: var(--brand-blue-hover);
+        }
+        .action-sub-link {
+            display: block;
+            background-color: #ffffff;
+            color: #475569;
+            padding: 0.7rem 1rem;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            border: 1px solid var(--border-line);
+            transition: all 0.2s;
+        }
+        .action-sub-link:hover {
+            background-color: #f1f5f9;
+            color: var(--brand-dark);
+            border-color: #94a3b8;
+        }
+
+        .download-guide-banner {
+            text-align: center;
+            margin-top: 2rem;
+            padding: 1rem 1.5rem;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 0.93rem;
+            color: #475569;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .download-guide-banner a {
+            color: var(--brand-blue);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        .download-guide-banner a:hover {
+            color: var(--brand-blue-hover);
+            text-decoration: underline;
+        }
+        .guide-separator {
+            color: #cbd5e1;
+            margin: 0 0.25rem;
+            user-select: none;
+        }
+
+        /* 额外信息区域 */
+        .info-section {
+            padding: 3rem 0;
+            border-top: 1px solid #e2e8f0;
+            margin-top: 2rem;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+        }
+        .info-card {
+            background: #ffffff;
+            border: 1px solid var(--border-line);
+            border-radius: 8px;
+            padding: 1.75rem;
+            box-shadow: var(--page-card-shadow);
+        }
+        .info-card h3 {
+            font-size: 1.25rem;
+            color: var(--brand-dark);
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .info-card p, .info-card ul {
+            font-size: 0.95rem;
+            color: #475569;
+        }
+        .info-card ul {
+            list-style-type: disc;
+            padding-left: 1.25rem;
+            margin-top: 0.5rem;
+        }
+        .info-card li {
+            margin-bottom: 0.5rem;
+        }
+
+        /* 页脚 */
+        footer {
+            background: #020617;
+            color: #94a3b8;
+            padding: 4rem 6%;
+            text-align: center;
+            font-size: 0.9rem;
+            border-top: 1px solid #1e293b;
+            margin-top: 3rem;
+        }
+
+        @media (max-width: 960px) {
+            header {
+                flex-direction: column;
+                gap: 1rem;
+                padding: 1.25rem 5%;
+            }
+            .nav-box {
+                flex-direction: column;
+                gap: 1rem;
+                width: 100%;
+                align-items: center;
+            }
+            nav {
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 0.4rem;
+            }
+            nav a {
+                margin: 0 0.3rem;
+                font-size: 0.88rem;
+            }
+            .github-btn {
+                margin-left: 0;
+            }
+            .download-hero h1 {
+                font-size: 2rem;
+            }
+        }
+        @media (max-width: 600px) {
+            .download-hero h1 {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="/" class="logo">
+            <img src="logo.webp" alt="Clash verge rev 官网" width="160" height="38">
+            <span>Clash Verge 官网</span>
+        </a>
+        <div class="nav-box">
+            <nav>
+                <a href="index.html#kernel-evolution">内核原理解析</a>
+                <a href="download.html" style="color: var(--brand-blue); font-weight: 500;">客户端下载</a>
+                <a href="index.html#scenario-solution">落地场景</a>
+                <a href="index.html#technical-terms">核心术语表</a>
+                <a href="install.html">安装教程</a>
+                <a href="configuration.html">配置教程</a>
+                <a href="wiki.html" class="nav-doc-link">📚 文档</a>
+            </nav>
+            <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/" class="github-btn" target="_blank" rel="noopener noreferrer">
+                <svg viewBox="0 0 16 16" version="1.1" aria-hidden="true"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+                GitHub 仓库
+            </a>
+        </div>
+    </header>
+
+    <main class="main-wrapper">
+        <section class="download-hero">
+            <h1>📥 Clash Verge Rev 全平台下载</h1>
+            <p>选择你的操作系统，下载最新版客户端。所有安装包均来自 GitHub 官方发布，安全、开源、无广告。</p>
+            <div class="version-badge">
+                🚀 最新稳定版 v2.5.2 · 2026-06-29
+            </div>
+        </section>
+
+        <!-- 下载卡片区域，结构与首页相似，但链接更新为 v2.5.2 -->
+        <div class="download-panel">
+            <div class="download-item">
+                <div>
+                    <h3>Windows</h3>
+                    <div class="platform-spec">适配 Windows 10/11 (x64 / ARM64)</div>
+                </div>
+                <div class="actions-area">
+                     <a href="#" class="action-main-link download-windows" data-file="Clash.Verge_2.5.1_x64-setup">官方下载</a>
+                    <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/releases/download/v2.5.2/Clash.Verge_2.5.2_x64-setup.exe" class="action-sub-link" target="_blank" rel="noopener noreferrer">GitHub 备用下载 · 查看所有版本</a>
+                </div>
+            </div>
+            <div class="download-item">
+                <div>
+                    <h3>macOS</h3>
+                    <div class="platform-spec">兼容 Intel 芯片与 Apple M 系列</div>
+                </div>
+                <div class="actions-area">
+                    <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/releases/download/v2.5.2/Clash.Verge_2.5.2_aarch64.dmg" class="action-main-link" target="_blank" rel="noopener noreferrer">⬇️ 官方下载 .dmg</a>
+                    <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/releases" class="action-sub-link" target="_blank" rel="noopener noreferrer">GitHub 备用下载 · 查看所有版本</a>
+                </div>
+            </div>
+            <div class="download-item">
+                <div>
+                    <h3>Linux</h3>
+                    <div class="platform-spec">AppImage / Deb / RPM 格式</div>
+                </div>
+                <div class="actions-area">
+                    <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/releases" class="action-main-link" target="_blank" rel="noopener noreferrer">⬇️ 前往 GitHub 下载</a>
+                    <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/releases" class="action-sub-link" target="_blank" rel="noopener noreferrer">选择对应发行版</a>
+                </div>
+            </div>
+            <div class="download-item">
+                <div>
+                    <h3>Android / iOS</h3>
+                    <div class="platform-spec">手机与平板设备</div>
+                </div>
+                <div class="actions-area">
+                    <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/releases" class="action-main-link" target="_blank" rel="noopener noreferrer">⬇️ 移动端下载指引</a>
+                    <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/releases" class="action-sub-link" target="_blank" rel="noopener noreferrer">GitHub 说明页</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="download-guide-banner">
+            <span>💡 下载后不知道如何配置？</span>
+            <a href="install.html">查看安装教程</a>
+            <span class="guide-separator">|</span>
+            <a href="configuration.html">配置教程</a>
+            <span class="guide-separator">|</span>
+            <a href="import-subscription.html">导入订阅指南</a>
+        </div>
+
+        <!-- 补充信息：系统要求与安装概览 -->
+        <div class="info-section">
+            <div class="info-grid">
+                <div class="info-card">
+                    <h3>🖥️ 系统要求</h3>
+                    <ul>
+                        <li><strong>Windows：</strong>10 或更高版本，64 位处理器</li>
+                        <li><strong>macOS：</strong>10.15 Catalina 及以上，支持 Intel 和 Apple Silicon</li>
+                        <li><strong>Linux：</strong>主流发行版（Ubuntu 20.04+, Debian 11+, Fedora 36+）</li>
+                        <li><strong>Android：</strong>7.0 及以上</li>
+                        <li><strong>iOS：</strong>14.0 或更新版本（需通过 TestFlight 或自签安装）</li>
+                    </ul>
+                </div>
+                <div class="info-card">
+                    <h3>📦 安装概览</h3>
+                    <p>下载后直接运行安装程序，按照向导完成安装。首次启动后，你需要导入订阅链接或手动添加节点配置。</p>
+                    <p style="margin-top: 0.8rem;">👉 <a href="install.html" style="color: var(--brand-blue); text-decoration: none; font-weight: 500;">查看详细安装步骤 →</a></p>
+                </div>
+                <div class="info-card">
+                    <h3>🔒 安全与校验</h3>
+                    <p>所有文件均通过 GitHub Actions 自动构建，你可以在 <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/releases" target="_blank" rel="noopener noreferrer" style="color: var(--brand-blue);">GitHub Releases</a> 页面找到 SHA256 校验值，确保文件完整性。</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="main-wrapper">
+            <p>&copy; 2026 Clash Verge Rev 官网下载中心. 本站所有技术文案均源于互联网公开网络工程架构及 RFC 标准文档研究，仅作为学术研究与本地测试之用，请严格在所在国法律许可框架内进行技术演练。</p>
+        </div>
+    </footer>
+
+    <script>
+        // 平滑滚动（如果页面内有锚点链接）
+        document.addEventListener("DOMContentLoaded", function() {
+            const anchorLinks = document.querySelectorAll('a[href^="#"]');
+            for (const anchor of anchorLinks) {
+                anchor.addEventListener("click", function(event) {
+                    const href = this.getAttribute("href");
+                    if (href === "#") return;
+                    event.preventDefault();
+                    const target = document.querySelector(href);
+                    if (target) {
+                        window.scrollTo({
+                            top: target.offsetTop - 85,
+                            behavior: "smooth"
+                        });
+                    }
+                });
+            }
+        });
+    </script>
+<script src="./download.js"></script>
+<script src="./download2.js"></script>
+</body>
+</html>
