@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clash Verge Rev TUN 模式 · 开启全局代理虚拟网卡 | 完整教程</title>
+    <meta name="description" content="详解 Clash Verge Rev 的 TUN 模式：从虚拟网卡原理到一键开启，实现真正全局代理。覆盖 Windows、macOS、Linux，包含常见故障排查与性能优化建议。">
+    <meta name="keywords" content="Clash Verge Rev TUN, TUN 模式, 开启 TUN, 虚拟网卡代理, 全局代理, 系统代理, Clash 全局模式">
+    <link rel="icon" type="image/x-icon" href="./favicon.ico">
+    <link rel="shortcut icon" type="image/x-icon" href="./favicon.ico">
+    <link rel="canonical" href="https://classhvverge.org/enable-tun.html">
+    <link rel="stylesheet" href="./index2.css">
+
+    <!-- 结构化数据 HowTo -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "如何开启 Clash Verge Rev 的 TUN 模式",
+      "description": "通过图形界面或配置文件启用 TUN 模式，实现系统级全局流量代理。",
+      "step": [
+        {
+          "@type": "HowToStep",
+          "position": 1,
+          "name": "确认管理员权限",
+          "text": "Windows/macOS 需要管理员或 root 权限以创建虚拟网卡。"
+        },
+        {
+          "@type": "HowToStep",
+          "position": 2,
+          "name": "进入 TUN 设置",
+          "text": "打开 Clash Verge Rev，点击左侧设置，找到 TUN 模式选项卡。"
+        },
+        {
+          "@type": "HowToStep",
+          "position": 3,
+          "name": "开启 TUN 开关",
+          "text": "点击开启 TUN 模式，系统会提示授权，允许后虚拟网卡即创建成功。"
+        },
+        {
+          "@type": "HowToStep",
+          "position": 4,
+          "name": "验证全局代理",
+          "text": "打开浏览器访问 IP 查询网站，确认 IP 已变为代理节点地址。"
+        }
+      ]
+    }
+    </script>
+
+    <style>
+        :root {
+            --brand-dark: #0f172a;
+            --brand-blue: #3b82f6;
+            --brand-blue-hover: #2563eb;
+            --text-main: #334155;
+            --text-title: #1e293b;
+            --bg-light: #ffffff;
+            --bg-accent: #f8fafc;
+            --border-line: #cbd5e1;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+            --shadow-md: 0 8px 24px rgba(0,0,0,0.1);
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            color: var(--text-main);
+            line-height: 1.75;
+            background-color: var(--bg-light);
+        }
+
+        /* 导航栏：与首页完全一致 */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem 6%;
+            background: var(--brand-dark);
+            color: #ffffff;
+            position: sticky;
+            top: 0;
+            z-index: 2000;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #ffffff;
+            text-decoration: none;
+            flex-shrink: 0;
+        }
+        .logo img {
+            width: auto;
+            height: 38px;
+            margin-right: 12px;
+            display: block;
+        }
+        .nav-box {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+        nav {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+        }
+        nav a {
+            margin-left: 0.5rem;
+            text-decoration: none;
+            color: #cbd5e1;
+            font-size: 0.93rem;
+            transition: color 0.2s;
+            white-space: nowrap;
+            padding: 0.25rem 0.35rem;
+            border-radius: 4px;
+        }
+        nav a:hover {
+            color: var(--brand-blue);
+            background-color: rgba(255,255,255,0.05);
+        }
+        nav a.nav-active {
+            color: var(--brand-blue);
+            font-weight: 600;
+            background-color: rgba(59,130,246,0.1);
+        }
+        .github-btn {
+            display: inline-flex;
+            align-items: center;
+            background-color: var(--brand-blue);
+            color: #ffffff;
+            padding: 0.55rem 1.1rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            text-decoration: none;
+            margin-left: 1.5rem;
+            transition: background-color 0.2s;
+            font-weight: 500;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .github-btn:hover {
+            background-color: var(--brand-blue-hover);
+        }
+        .github-btn svg {
+            width: 16px;
+            height: 16px;
+            margin-right: 6px;
+            fill: currentColor;
+        }
+
+        .main-wrapper {
+            max-width: 1260px;
+            margin: 0 auto;
+            padding: 0 6%;
+        }
+
+        /* Hero */
+        .tun-hero {
+            text-align: center;
+            padding: 4.5rem 0 2rem;
+        }
+        .tun-hero h1 {
+            font-size: 2.8rem;
+            color: var(--brand-dark);
+            line-height: 1.25;
+            margin-bottom: 1rem;
+        }
+        .tun-hero p {
+            font-size: 1.15rem;
+            color: #64748b;
+            max-width: 750px;
+            margin: 0 auto 2rem auto;
+        }
+
+        /* 流程图 */
+        .flow-steps {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.25rem;
+            margin: 2.5rem 0 3.5rem;
+        }
+        .flow-step {
+            background: #ffffff;
+            border: 1px solid var(--border-line);
+            border-radius: 12px;
+            padding: 1.8rem 1.2rem;
+            text-align: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .flow-step:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-md);
+        }
+        .step-num {
+            display: inline-block;
+            width: 2.5rem;
+            height: 2.5rem;
+            background: var(--brand-dark);
+            color: #fff;
+            border-radius: 50%;
+            line-height: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+        .flow-step h3 {
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+            color: var(--brand-dark);
+        }
+        .flow-step p {
+            font-size: 0.9rem;
+            color: #475569;
+        }
+
+        /* 原理对比区块 */
+        .compare-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+        .compare-card {
+            background: #ffffff;
+            border: 1px solid var(--border-line);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: var(--shadow-sm);
+        }
+        .compare-card h3 {
+            font-size: 1.4rem;
+            color: var(--brand-dark);
+            margin-bottom: 1rem;
+        }
+        .compare-card ul {
+            list-style: none;
+            padding: 0;
+        }
+        .compare-card li {
+            padding: 0.4rem 0;
+            border-bottom: 1px dashed #e2e8f0;
+        }
+        .compare-card li:last-child { border-bottom: none; }
+        .compare-card .highlight {
+            background: #f0f9ff;
+            border-left: 4px solid var(--brand-blue);
+            padding: 0.8rem;
+            margin-top: 1rem;
+            border-radius: 4px;
+        }
+
+        /* 平台指引 */
+        .platform-tabs {
+            margin: 2rem 0;
+        }
+        .tab-buttons {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .tab-btn {
+            padding: 0.7rem 1.5rem;
+            background: #f1f5f9;
+            border: 1px solid var(--border-line);
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            background: var(--brand-blue);
+            color: #ffffff;
+            border-color: var(--brand-blue);
+        }
+        .tab-panel {
+            display: none;
+            background: #ffffff;
+            border: 1px solid var(--border-line);
+            border-radius: 12px;
+            padding: 2rem;
+        }
+        .tab-panel.active {
+            display: block;
+        }
+        .tab-panel code {
+            background: #f1f5f9;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        /* 配置代码块 */
+        .code-block {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 1.5rem;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+        .code-block .key { color: #93c5fd; }
+        .code-block .value { color: #fbbf24; }
+        .code-block .comment { color: #94a3b8; }
+
+        /* 常见问题 */
+        .faq-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        .faq-item {
+            background: #ffffff;
+            border: 1px solid var(--border-line);
+            border-radius: 10px;
+            padding: 1.5rem;
+        }
+        .faq-item h4 {
+            color: var(--brand-dark);
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        footer {
+            background: #020617;
+            color: #94a3b8;
+            padding: 4rem 6%;
+            text-align: center;
+            font-size: 0.9rem;
+            border-top: 1px solid #1e293b;
+            margin-top: 3rem;
+        }
+
+        @media (max-width: 960px) {
+            header {
+                flex-direction: column;
+                gap: 1rem;
+                padding: 1.25rem 5%;
+            }
+            .nav-box {
+                flex-direction: column;
+                gap: 1rem;
+                width: 100%;
+                align-items: center;
+            }
+            nav {
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 0.4rem;
+            }
+            nav a {
+                margin: 0 0.3rem;
+                font-size: 0.88rem;
+            }
+            .github-btn { margin-left: 0; }
+            .tun-hero h1 { font-size: 2rem; }
+            .flow-steps { grid-template-columns: 1fr 1fr; }
+            .compare-grid { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 500px) {
+            .flow-steps { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="/" class="logo">
+            <img src="logo.webp" alt="Clash verge rev 官网" width="160" height="38">
+            <span>Clash Verge 官网</span>
+        </a>
+        <div class="nav-box">
+            <nav>
+                <a href="index.html#kernel-evolution">内核原理解析</a>
+                <a href="download.html">客户端下载</a>
+                <a href="index.html#scenario-solution">落地场景</a>
+                <a href="index.html#technical-terms">核心术语表</a>
+                <a href="install.html">安装教程</a>
+                <a href="configuration.html">配置教程</a>
+                <a href="import-subscription.html">导入订阅</a>
+                <a href="enable-tun.html" class="nav-active">开启TUN</a>
+                <a href="wiki.html">📚 文档</a>
+            </nav>
+            <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/" class="github-btn" target="_blank" rel="noopener noreferrer">
+                <svg viewBox="0 0 16 16" version="1.1" aria-hidden="true"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+                GitHub 仓库
+            </a>
+        </div>
+    </header>
+
+    <main class="main-wrapper">
+        <section class="tun-hero">
+            <h1>🔌 开启 TUN 模式 · 实现真正的全局代理</h1>
+            <p>不再局限于浏览器代理，TUN 模式在系统底层创建虚拟网卡，接管所有应用流量，让命令行、游戏、UDP 流量也能无缝通过代理。</p>
+        </section>
+
+        <!-- 操作步骤流程 -->
+        <div class="flow-steps">
+            <div class="flow-step">
+                <div class="step-num">1</div>
+                <h3>获取管理员权限</h3>
+                <p>Windows 以管理员身份运行，macOS/Linux 使用 sudo 或授予权限。</p>
+            </div>
+            <div class="flow-step">
+                <div class="step-num">2</div>
+                <h3>进入 TUN 设置</h3>
+                <p>点击左侧“设置” → “TUN 模式” 选项卡，查看虚拟网卡状态。</p>
+            </div>
+            <div class="flow-step">
+                <div class="step-num">3</div>
+                <h3>一键开启</h3>
+                <p>点击开关按钮，系统将自动创建虚拟网卡并修改路由表。</p>
+            </div>
+            <div class="flow-step">
+                <div class="step-num">4</div>
+                <h3>验证全局生效</h3>
+                <p>打开终端 ping 或访问 IP 检测网站，确认出口 IP 已改变。</p>
+            </div>
+        </div>
+
+        <!-- 系统代理 vs TUN 模式对比 -->
+        <h2 style="font-size: 2rem; margin-bottom: 1.5rem; color: var(--brand-dark); border-left: 5px solid var(--brand-blue); padding-left: 1rem;">🆚 系统代理 vs TUN 模式</h2>
+        <div class="compare-grid">
+            <div class="compare-card">
+                <h3>🟡 系统代理 (System Proxy)</h3>
+                <ul>
+                    <li>✅ 设置简单，无需额外权限</li>
+                    <li>✅ 对浏览器和部分应用有效</li>
+                    <li>❌ 仅支持 HTTP/HTTPS 流量</li>
+                    <li>❌ 命令行工具、游戏等无法代理</li>
+                    <li>❌ UDP 流量无法接管</li>
+                </ul>
+                <div class="highlight">
+                    📌 适合轻度用户，仅需浏览器科学上网。
+                </div>
+            </div>
+            <div class="compare-card">
+                <h3>🔵 TUN 模式 (虚拟网卡)</h3>
+                <ul>
+                    <li>✅ 接管所有 TCP/UDP 流量</li>
+                    <li>✅ 支持游戏、终端、Docker 等</li>
+                    <li>✅ 真正的全局代理，无死角</li>
+                    <li>❌ 需要管理员/root 权限</li>
+                    <li>❌ 配置稍复杂，需注意 DNS 设置</li>
+                </ul>
+                <div class="highlight">
+                    🚀 推荐开发者和有全局代理需求的用户开启。
+                </div>
+            </div>
+        </div>
+
+        <!-- 分平台开启指引 -->
+        <h2 style="font-size: 2rem; margin: 2.5rem 0 1.5rem; color: var(--brand-dark); border-left: 5px solid var(--brand-blue); padding-left: 1rem;">🖥️ 各平台开启步骤</h2>
+        <div class="platform-tabs">
+            <div class="tab-buttons">
+                <button class="tab-btn active" data-tab="win">Windows</button>
+                <button class="tab-btn" data-tab="mac">macOS</button>
+                <button class="tab-btn" data-tab="linux">Linux</button>
+            </div>
+            <div class="tab-panel active" id="tab-win">
+                <h3>Windows 开启 TUN</h3>
+                <ol>
+                    <li>右键点击桌面图标或开始菜单中的 Clash Verge Rev，选择“以管理员身份运行”。</li>
+                    <li>在设置页面找到 “TUN 模式”，点击开启。</li>
+                    <li>如果弹出用户账户控制 (UAC) 提示，点击“是”授权。</li>
+                    <li>开启后系统托盘图标会显示绿色，确认 “TUN 模式” 状态为运行中。</li>
+                    <li>可能需要关闭并重新开启一些应用，使其走新路由。</li>
+                </ol>
+                <div class="code-block">
+<span class="comment"># 也可在配置文件中添加以下内容手动开启</span>
+<span class="key">tun:</span>
+  <span class="key">enable:</span> <span class="value">true</span>
+  <span class="key">stack:</span> <span class="value">system</span>   <span class="comment"># 或 gvisor</span>
+  <span class="key">dns-hijack:</span>
+    - <span class="value">any:53</span>
+                </div>
+            </div>
+            <div class="tab-panel" id="tab-mac">
+                <h3>macOS 开启 TUN</h3>
+                <ol>
+                    <li>确保 Clash Verge Rev 位于“应用程序”文件夹。</li>
+                    <li>启动后，前往“设置” → “TUN 模式”，点击开启。</li>
+                    <li>首次开启会提示输入管理员密码以安装虚拟网卡。</li>
+                    <li>如果提示“系统扩展已被阻止”，请前往“系统设置” → “隐私与安全性” → 允许 Clash 的网络扩展。</li>
+                    <li>成功开启后，菜单栏图标会显示 VPN 标识。</li>
+                </ol>
+                <p>macOS 可能需要额外的网络扩展授权，请按照屏幕提示操作。</p>
+            </div>
+            <div class="tab-panel" id="tab-linux">
+                <h3>Linux 开启 TUN</h3>
+                <ol>
+                    <li>确保你有 root 权限，或当前用户有 <code>CAP_NET_ADMIN</code> 能力。</li>
+                    <li>在设置中开启 TUN 模式，系统将自动创建 <code>tun0</code> 网卡。</li>
+                    <li>如果使用 AppImage，建议以 <code>sudo ./Clash.Verge*.AppImage</code> 运行。</li>
+                    <li>开启后可通过 <code>ip addr show tun0</code> 验证虚拟网卡是否存在。</li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- TUN 堆栈选择 -->
+        <h2 style="font-size: 2rem; margin: 2.5rem 0 1.5rem; color: var(--brand-dark); border-left: 5px solid var(--brand-blue); padding-left: 1rem;">⚙️ TUN 堆栈选择与性能</h2>
+        <div class="compare-grid">
+            <div class="compare-card">
+                <h3>System 堆栈</h3>
+                <p>使用操作系统原生的网络协议栈实现 TUN，性能好，兼容性高。推荐 Windows 和 macOS 用户优先选择。可能需要额外的防火墙放行规则。</p>
+            </div>
+            <div class="compare-card">
+                <h3>gVisor 堆栈</h3>
+                <p>基于 Go 语言的用户空间网络栈，无需依赖系统网络栈，可在受限环境中运行。适用于无法使用 system 堆栈的 Linux 环境，但 CPU 占用稍高。</p>
+            </div>
+        </div>
+
+        <!-- 常见问题 -->
+        <h2 style="font-size: 2rem; margin: 2.5rem 0 1.5rem; color: var(--brand-dark);">❓ TUN 模式常见问题</h2>
+        <div class="faq-grid">
+            <div class="faq-item">
+                <h4>开启 TUN 后无法上网？</h4>
+                <p>检查是否已授予管理员权限，并查看 DNS 设置是否正确。可尝试切换 TUN 堆栈为 <code>gvisor</code> 或重启客户端。</p>
+            </div>
+            <div class="faq-item">
+                <h4>游戏或语音软件延迟高？</h4>
+                <p>尝试调整 TUN 模式的 UDP 转发设置，或为游戏单独添加直连规则，避免代理绕路。</p>
+            </div>
+            <div class="faq-item">
+                <h4>虚拟网卡创建失败？</h4>
+                <p>Linux 可能需要安装 <code>tun</code> 内核模块：<code>sudo modprobe tun</code>。Windows 检查是否有其他 VPN 软件冲突。</p>
+            </div>
+            <div class="faq-item">
+                <h4>TUN 模式与系统代理同时开？</h4>
+                <p>可以同时开启，但 TUN 模式会接管所有流量，系统代理设置将被忽略，因此只需保留 TUN 即可。</p>
+            </div>
+        </div>
+
+        <!-- 温馨提示 -->
+        <div style="background: #f0f9ff; border-left: 5px solid var(--brand-blue); padding: 1.5rem; border-radius: 8px; margin: 2rem 0;">
+            <p>💡 <strong>提示：</strong> TUN 模式开启后，所有网络流量都会经过代理内核。如果需要让特定软件直连，可参考 <a href="rule.html" style="color: var(--brand-blue); font-weight: 600;">Rule 模式</a> 进行精细化分流。</p>
+        </div>
+    </main>
+
+    <footer>
+        <div class="main-wrapper">
+            <p>&copy; 2026 Clash Verge Rev 官网下载中心. 所有技术内容基于社区公开文档，仅供学习与测试。请遵守当地法律法规。</p>
+        </div>
+    </footer>
+
+    <script>
+        // 平台切换选项卡
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const tabPanels = document.querySelectorAll('.tab-panel');
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                tabBtns.forEach(b => b.classList.remove('active'));
+                tabPanels.forEach(p => p.classList.remove('active'));
+                btn.classList.add('active');
+                const target = document.getElementById('tab-' + btn.dataset.tab);
+                if (target) target.classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>
