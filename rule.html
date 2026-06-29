@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clash Verge Rev Rule 模式 · 流量分流与规则配置终极指南</title>
+    <meta name="description" content="掌握 Clash Verge Rev 的 Rule 模式：从规则类型、匹配优先级到 rule-provider 进阶技巧，定制你的智能分流策略，让国内外流量各走其道。">
+    <meta name="keywords" content="Clash Verge Rev Rule, Rule 模式, 分流规则, 规则配置, DOMAIN-SUFFIX, GEOIP, 规则集, rule-provider, 流量调度">
+    <link rel="icon" type="image/x-icon" href="./favicon.ico">
+    <link rel="shortcut icon" type="image/x-icon" href="./favicon.ico">
+    <link rel="canonical" href="https://classhvverge.org/rule.html">
+    <link rel="stylesheet" href="./index2.css">
+
+    <!-- 结构化数据：TechArticle -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "TechArticle",
+      "headline": "Clash Verge Rev Rule 模式完全指南",
+      "description": "掌握 Clash Verge Rev 的 Rule 模式：从规则类型、匹配优先级到 rule-provider 进阶技巧，定制你的智能分流策略，让国内外流量各走其道。",
+      "author": { "@type": "Organization", "name": "Clash Verge Rev 社区" },
+      "datePublished": "2026-06-29",
+      "dateModified": "2026-06-29",
+      "mainEntityOfPage": { "@type": "WebPage", "@id": "https://classhvverge.org/rule.html" }
+    }
+    </script>
+
+    <style>
+        :root {
+            --brand-dark: #0f172a;
+            --brand-blue: #3b82f6;
+            --brand-blue-hover: #2563eb;
+            --text-main: #334155;
+            --text-title: #1e293b;
+            --bg-light: #ffffff;
+            --bg-accent: #f8fafc;
+            --border-line: #cbd5e1;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+            --shadow-md: 0 8px 24px rgba(0,0,0,0.1);
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            color: var(--text-main);
+            line-height: 1.75;
+            background-color: var(--bg-light);
+        }
+
+        /* 导航栏：与首页完全一致 */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem 6%;
+            background: var(--brand-dark);
+            color: #ffffff;
+            position: sticky;
+            top: 0;
+            z-index: 2000;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #ffffff;
+            text-decoration: none;
+            flex-shrink: 0;
+        }
+        .logo img {
+            width: auto;
+            height: 38px;
+            margin-right: 12px;
+            display: block;
+        }
+        .nav-box {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+        nav {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+        }
+        nav a {
+            margin-left: 0.5rem;
+            text-decoration: none;
+            color: #cbd5e1;
+            font-size: 0.93rem;
+            transition: color 0.2s;
+            white-space: nowrap;
+            padding: 0.25rem 0.35rem;
+            border-radius: 4px;
+        }
+        nav a:hover {
+            color: var(--brand-blue);
+            background-color: rgba(255,255,255,0.05);
+        }
+        nav a.nav-active {
+            color: var(--brand-blue);
+            font-weight: 600;
+            background-color: rgba(59,130,246,0.1);
+        }
+        .github-btn {
+            display: inline-flex;
+            align-items: center;
+            background-color: var(--brand-blue);
+            color: #ffffff;
+            padding: 0.55rem 1.1rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            text-decoration: none;
+            margin-left: 1.5rem;
+            transition: background-color 0.2s;
+            font-weight: 500;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .github-btn:hover {
+            background-color: var(--brand-blue-hover);
+        }
+        .github-btn svg {
+            width: 16px;
+            height: 16px;
+            margin-right: 6px;
+            fill: currentColor;
+        }
+
+        .main-wrapper {
+            max-width: 1260px;
+            margin: 0 auto;
+            padding: 0 6%;
+        }
+
+        /* Hero */
+        .rule-hero {
+            text-align: center;
+            padding: 4.5rem 0 2rem;
+        }
+        .rule-hero h1 {
+            font-size: 2.8rem;
+            color: var(--brand-dark);
+            line-height: 1.25;
+            margin-bottom: 1rem;
+        }
+        .rule-hero p {
+            font-size: 1.15rem;
+            color: #64748b;
+            max-width: 750px;
+            margin: 0 auto 2rem auto;
+        }
+
+        /* 流程示意 */
+        .match-flow {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1rem;
+            margin: 2.5rem 0 3.5rem;
+            align-items: center;
+        }
+        .match-node {
+            background: #ffffff;
+            border: 1px solid var(--border-line);
+            border-radius: 12px;
+            padding: 1.5rem 1rem;
+            text-align: center;
+            transition: transform 0.2s;
+            position: relative;
+        }
+        .match-node:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-md);
+        }
+        .match-node .step-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        .match-node h4 {
+            font-size: 1rem;
+            color: var(--brand-dark);
+        }
+        .match-arrow {
+            text-align: center;
+            font-size: 2rem;
+            color: var(--brand-blue);
+        }
+
+        /* 规则类型卡片 */
+        .type-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.25rem;
+            margin: 2rem 0;
+        }
+        .type-card {
+            background: #ffffff;
+            border: 1px solid var(--border-line);
+            border-radius: 10px;
+            padding: 1.5rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-align: center;
+        }
+        .type-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-md);
+        }
+        .type-card h3 {
+            font-size: 1.15rem;
+            color: var(--brand-dark);
+            margin-bottom: 0.5rem;
+        }
+        .type-card code {
+            background: #f1f5f9;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.9em;
+            display: inline-block;
+            margin-bottom: 0.5rem;
+        }
+        .type-card p {
+            font-size: 0.9rem;
+            color: #475569;
+        }
+
+        /* 代码块 */
+        .code-block {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 1.5rem;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+        .code-block .key { color: #93c5fd; }
+        .code-block .value { color: #fbbf24; }
+        .code-block .comment { color: #94a3b8; }
+
+        .tip-box {
+            background: #f0f9ff;
+            border-left: 5px solid var(--brand-blue);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+        }
+
+        .section-title {
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            color: var(--brand-dark);
+            border-left: 5px solid var(--brand-blue);
+            padding-left: 1rem;
+        }
+
+        /* 对比面板 */
+        .dual-panel {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+        .panel-card {
+            background: #ffffff;
+            border: 1px solid var(--border-line);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .faq-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        .faq-item {
+            background: #ffffff;
+            border: 1px solid var(--border-line);
+            border-radius: 10px;
+            padding: 1.5rem;
+        }
+        .faq-item h4 {
+            color: var(--brand-dark);
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        footer {
+            background: #020617;
+            color: #94a3b8;
+            padding: 4rem 6%;
+            text-align: center;
+            font-size: 0.9rem;
+            border-top: 1px solid #1e293b;
+            margin-top: 3rem;
+        }
+
+        @media (max-width: 960px) {
+            header {
+                flex-direction: column;
+                gap: 1rem;
+                padding: 1.25rem 5%;
+            }
+            .nav-box {
+                flex-direction: column;
+                gap: 1rem;
+                width: 100%;
+                align-items: center;
+            }
+            nav {
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 0.4rem;
+            }
+            nav a { margin: 0 0.3rem; font-size: 0.88rem; }
+            .github-btn { margin-left: 0; }
+            .rule-hero h1 { font-size: 2rem; }
+            .match-flow { grid-template-columns: repeat(3, 1fr); }
+            .dual-panel { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 600px) {
+            .match-flow { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="/" class="logo">
+            <img src="logo.webp" alt="Clash verge rev 官网" width="160" height="38">
+            <span>Clash Verge 官网</span>
+        </a>
+        <div class="nav-box">
+            <nav>
+                <a href="index.html#kernel-evolution">内核原理解析</a>
+                <a href="download.html">客户端下载</a>
+                <a href="index.html#scenario-solution">落地场景</a>
+                <a href="index.html#technical-terms">核心术语表</a>
+                <a href="install.html">安装教程</a>
+                <a href="configuration.html">配置教程</a>
+                <a href="import-subscription.html">导入订阅</a>
+                <a href="enable-tun.html">开启TUN</a>
+                <a href="dns.html">DNS配置</a>
+                <a href="rule.html" class="nav-active">Rule模式</a>
+                <a href="wiki.html">📚 文档</a>
+            </nav>
+            <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/" class="github-btn" target="_blank" rel="noopener noreferrer">
+                <svg viewBox="0 0 16 16" version="1.1" aria-hidden="true"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+                GitHub 仓库
+            </a>
+        </div>
+    </header>
+
+    <main class="main-wrapper">
+        <section class="rule-hero">
+            <h1>⚡ 驾驭规则 · Rule 模式深度解析</h1>
+            <p>规则是 Clash 的灵魂。通过精准的分流策略，让国内流量直连、海外流量代理、广告流量阻断，真正实现智能网络调度。</p>
+        </section>
+
+        <!-- 规则匹配流程图示 -->
+        <div class="match-flow">
+            <div class="match-node">
+                <div class="step-icon">🔍</div>
+                <h4>请求发起</h4>
+            </div>
+            <div class="match-arrow">→</div>
+            <div class="match-node">
+                <div class="step-icon">📋</div>
+                <h4>规则匹配</h4>
+            </div>
+            <div class="match-arrow">→</div>
+            <div class="match-node">
+                <div class="step-icon">🎯</div>
+                <h4>命中策略</h4>
+            </div>
+            <div class="match-arrow">→</div>
+            <div class="match-node">
+                <div class="step-icon">🚦</div>
+                <h4>执行动作</h4>
+            </div>
+            <div class="match-arrow">→</div>
+            <div class="match-node">
+                <div class="step-icon">📊</div>
+                <h4>流量转发</h4>
+            </div>
+        </div>
+
+        <!-- 规则类型详解 -->
+        <h2 class="section-title">🏷️ 规则类型全览</h2>
+        <div class="type-grid">
+            <div class="type-card">
+                <h3>DOMAIN-SUFFIX</h3>
+                <code>DOMAIN-SUFFIX,google.com,Proxy</code>
+                <p>域名后缀匹配，最常用。匹配 google.com 及其所有子域名。</p>
+            </div>
+            <div class="type-card">
+                <h3>DOMAIN-KEYWORD</h3>
+                <code>DOMAIN-KEYWORD,google,Proxy</code>
+                <p>域名包含关键词即命中，比后缀匹配更宽泛。</p>
+            </div>
+            <div class="type-card">
+                <h3>DOMAIN</h3>
+                <code>DOMAIN,clashverge.org,Direct</code>
+                <p>精确域名匹配，不含子域名。</p>
+            </div>
+            <div class="type-card">
+                <h3>GEOIP</h3>
+                <code>GEOIP,CN,Direct</code>
+                <p>基于 IP 地理数据库，判断流量归属地，通常用于国内直连。</p>
+            </div>
+            <div class="type-card">
+                <h3>IP-CIDR</h3>
+                <code>IP-CIDR,10.0.0.0/8,Direct</code>
+                <p>匹配 IP 段，适用于局域网或特定 IP 范围。</p>
+            </div>
+            <div class="type-card">
+                <h3>MATCH</h3>
+                <code>MATCH,Proxy</code>
+                <p>兜底规则，必须放在最后，匹配所有剩余流量。</p>
+            </div>
+            <div class="type-card">
+                <h3>SRC-IP-CIDR</h3>
+                <code>SRC-IP-CIDR,192.168.1.0/24,Direct</code>
+                <p>基于客户端源 IP 进行分流，适合多设备策略。</p>
+            </div>
+            <div class="type-card">
+                <h3>PROCESS-NAME</h3>
+                <code>PROCESS-NAME,firefox,Proxy</code>
+                <p>根据进程名匹配，指定特定软件走代理。</p>
+            </div>
+        </div>
+
+        <!-- 规则优先级与实战案例 -->
+        <div class="dual-panel">
+            <div class="panel-card">
+                <h3 style="font-size: 1.4rem; margin-bottom: 1rem;">📌 匹配优先级</h3>
+                <p>规则按 <strong>从上到下</strong> 的顺序匹配，一旦命中立即停止。因此务必遵循：</p>
+                <ul style="margin-left: 1.2rem; margin-top: 0.5rem; color: #475569;">
+                    <li>最具体的规则放在最前面（如单个域名）</li>
+                    <li>广告屏蔽规则（REJECT）尽量提前</li>
+                    <li>GEOIP 等宽泛规则居中</li>
+                    <li>MATCH 作为最终兜底放在末尾</li>
+                </ul>
+            </div>
+            <div class="panel-card">
+                <h3 style="font-size: 1.4rem; margin-bottom: 1rem;">⚙️ 典型配置片段</h3>
+                <div class="code-block">
+<span class="comment"># 广告拦截</span>
+<span class="value">DOMAIN-SUFFIX,doubleclick.net,REJECT</span>
+<span class="comment"># 国内域名直连</span>
+<span class="value">DOMAIN-SUFFIX,cn,DIRECT</span>
+<span class="value">GEOIP,CN,DIRECT</span>
+<span class="comment"># 流媒体代理</span>
+<span class="value">DOMAIN-SUFFIX,netflix.com,🎬 流媒体</span>
+<span class="comment"># 其余走代理</span>
+<span class="value">MATCH,🚀 自动选择</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rule Provider 进阶 -->
+        <h2 class="section-title">📦 进阶：Rule Provider 规则集</h2>
+        <div class="dual-panel">
+            <div class="panel-card">
+                <h3>什么是 Rule Provider？</h3>
+                <p>将大量规则托管在远程 URL 或本地文件，Clash 自动加载更新。无需在配置中堆积成千上万条规则，保持主配置清爽。</p>
+                <div class="code-block">
+<span class="key">rule-providers:</span>
+  <span class="key">cn_domains:</span>
+    <span class="key">type:</span> <span class="value">http</span>
+    <span class="key">url:</span> <span class="value">"https://example.com/cn.yaml"</span>
+    <span class="key">path:</span> <span class="value">./rules/cn.yaml</span>
+    <span class="key">interval:</span> <span class="value">86400</span>
+                </div>
+            </div>
+            <div class="panel-card">
+                <h3>如何使用规则集</h3>
+                <p>在规则列表中使用 <code>RULE-SET</code> 引用：</p>
+                <div class="code-block">
+<span class="key">rules:</span>
+  - <span class="value">RULE-SET,cn_domains,DIRECT</span>
+  - <span class="value">RULE-SET,ads,REJECT</span>
+  - <span class="value">MATCH,🚀 自动选择</span>
+                </div>
+                <div class="tip-box" style="margin-top: 1rem;">
+                    💡 推荐使用社区维护的规则集（如 Loyalsoldier/clash-rules），每日更新，省心可靠。
+                </div>
+            </div>
+        </div>
+
+        <!-- 常见问题 -->
+        <h2 style="font-size: 2rem; margin: 2.5rem 0 1.5rem; color: var(--brand-dark);">❓ 规则配置常见问题</h2>
+        <div class="faq-grid">
+            <div class="faq-item">
+                <h4>为什么规则不生效？</h4>
+                <p>检查规则顺序，确保更精确的规则在上面。修改配置文件后需点击“重载配置”使其生效。</p>
+            </div>
+            <div class="faq-item">
+                <h4>GEOIP 数据不准确？</h4>
+                <p>Clash 使用的 GeoIP 数据库可能滞后。可以手动替换 <code>Country.mmdb</code> 文件或使用规则集代替。</p>
+            </div>
+            <div class="faq-item">
+                <h4>如何让某个应用不走代理？</h4>
+                <p>使用 <code>PROCESS-NAME,yourapp.exe,DIRECT</code> (Windows) 或 <code>PROCESS-NAME,yourapp,DIRECT</code> (macOS/Linux)。</p>
+            </div>
+            <div class="faq-item">
+                <h4>MATCH 规则可以放在中间吗？</h4>
+                <p>不可以。MATCH 会匹配所有流量，一旦出现在规则列表中间，后面的规则将永远不会被使用。</p>
+            </div>
+        </div>
+
+        <!-- 引导下一步 -->
+        <div style="text-align: center; margin: 3rem 0 2rem; background: #f8fafc; padding: 2rem; border-radius: 12px;">
+            <p style="font-size: 1.1rem; color: #475569;">🧩 掌握了规则分流，再搭配 Fake‑IP 和 DNS 优化，你的代理网络将达到近乎完美的状态。</p>
+            <a href="fake-ip.html" style="display: inline-block; margin-top: 1rem; background: var(--brand-blue); color: #fff; padding: 0.8rem 2rem; border-radius: 6px; text-decoration: none; font-weight: 600;">探索 Fake‑IP 模式 →</a>
+        </div>
+    </main>
+
+    <footer>
+        <div class="main-wrapper">
+            <p>&copy; 2026 Clash Verge Rev 官网下载中心. 所有技术内容基于社区公开文档，仅供学习与测试。请遵守当地法律法规。</p>
+        </div>
+    </footer>
+
+</body>
+</html>
