@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clash Verge Rev DNS 配置 · 域名解析优化与防污染终极指南</title>
+    <meta name="description" content="深入解析 Clash Verge Rev 的 DNS 设置：加密 DNS（DoH/DoT）、Fake‑IP 模式、防 DNS 泄漏策略，打造安全高速的域名解析体验。">
+    <meta name="keywords" content="Clash Verge Rev DNS, DNS 配置, DNS 优化, Fake‑IP, DoH, DoT, DNS 防污染, DNS 泄漏, 域名解析">
+    <link rel="icon" type="image/x-icon" href="./favicon.ico">
+    <link rel="shortcut icon" type="image/x-icon" href="./favicon.ico">
+    <link rel="canonical" href="https://classhvverge.org/dns.html">
+    <link rel="stylesheet" href="./index2.css">
+
+    <!-- 结构化数据：TechArticle -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "TechArticle",
+      "headline": "Clash Verge Rev DNS 配置深度指南",
+      "description": "深入解析 Clash Verge Rev 的 DNS 设置：加密 DNS（DoH/DoT）、Fake‑IP 模式、防 DNS 泄漏策略，打造安全高速的域名解析体验。",
+      "author": { "@type": "Organization", "name": "Clash Verge Rev 社区" },
+      "datePublished": "2026-06-29",
+      "dateModified": "2026-06-29",
+      "mainEntityOfPage": { "@type": "WebPage", "@id": "https://classhvverge.org/dns.html" }
+    }
+    </script>
+
+    <style>
+        :root {
+            --brand-dark: #0f172a;
+            --brand-blue: #3b82f6;
+            --brand-blue-hover: #2563eb;
+            --text-main: #334155;
+            --text-title: #1e293b;
+            --bg-light: #ffffff;
+            --bg-accent: #f8fafc;
+            --border-line: #cbd5e1;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+            --shadow-md: 0 8px 24px rgba(0,0,0,0.1);
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            color: var(--text-main);
+            line-height: 1.75;
+            background-color: var(--bg-light);
+        }
+
+        /* 导航栏：与首页完全一致 */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem 6%;
+            background: var(--brand-dark);
+            color: #ffffff;
+            position: sticky;
+            top: 0;
+            z-index: 2000;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #ffffff;
+            text-decoration: none;
+            flex-shrink: 0;
+        }
+        .logo img {
+            width: auto;
+            height: 38px;
+            margin-right: 12px;
+            display: block;
+        }
+        .nav-box {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+        nav {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+        }
+        nav a {
+            margin-left: 0.5rem;
+            text-decoration: none;
+            color: #cbd5e1;
+            font-size: 0.93rem;
+            transition: color 0.2s;
+            white-space: nowrap;
+            padding: 0.25rem 0.35rem;
+            border-radius: 4px;
+        }
+        nav a:hover {
+            color: var(--brand-blue);
+            background-color: rgba(255,255,255,0.05);
+        }
+        nav a.nav-active {
+            color: var(--brand-blue);
+            font-weight: 600;
+            background-color: rgba(59,130,246,0.1);
+        }
+        .github-btn {
+            display: inline-flex;
+            align-items: center;
+            background-color: var(--brand-blue);
+            color: #ffffff;
+            padding: 0.55rem 1.1rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            text-decoration: none;
+            margin-left: 1.5rem;
+            transition: background-color 0.2s;
+            font-weight: 500;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .github-btn:hover {
+            background-color: var(--brand-blue-hover);
+        }
+        .github-btn svg {
+            width: 16px;
+            height: 16px;
+            margin-right: 6px;
+            fill: currentColor;
+        }
+
+        .main-wrapper {
+            max-width: 1260px;
+            margin: 0 auto;
+            padding: 0 6%;
+        }
+
+        /* DNS Hero */
+        .dns-hero {
+            text-align: center;
+            padding: 4.5rem 0 2rem;
+        }
+        .dns-hero h1 {
+            font-size: 2.8rem;
+            color: var(--brand-dark);
+            line-height: 1.25;
+            margin-bottom: 1rem;
+        }
+        .dns-hero p {
+            font-size: 1.15rem;
+            color: #64748b;
+            max-width: 750px;
+            margin: 0 auto 2rem auto;
+        }
+
+        /* 步骤流程 */
+        .dns-flow {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.25rem;
+            margin: 2.5rem 0 3.5rem;
+        }
+        .flow-card {
+            background: #ffffff;
+            border: 1px solid var(--border-line);
+            border-radius: 12px;
+            padding: 1.8rem 1.2rem;
+            text-align: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .flow-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-md);
+        }
+        .step-num {
+            display: inline-block;
+            width: 2.5rem;
+            height: 2.5rem;
+            background: var(--brand-dark);
+            color: #fff;
+            border-radius: 50%;
+            line-height: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+        .flow-card h3 {
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+            color: var(--brand-dark);
+        }
+        .flow-card p {
+            font-size: 0.9rem;
+            color: #475569;
+        }
+
+        /* 对比卡片 */
+        .compare-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+        .compare-card {
+            background: #ffffff;
+            border: 1px solid var(--border-line);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: var(--shadow-sm);
+        }
+        .compare-card h3 {
+            font-size: 1.4rem;
+            color: var(--brand-dark);
+            margin-bottom: 1rem;
+        }
+        .compare-card ul {
+            list-style: none;
+            padding: 0;
+        }
+        .compare-card li {
+            padding: 0.4rem 0;
+            border-bottom: 1px dashed #e2e8f0;
+            display: flex;
+            gap: 0.5rem;
+        }
+        .compare-card li:last-child { border-bottom: none; }
+        .highlight-box {
+            background: #f0f9ff;
+            border-left: 4px solid var(--brand-blue);
+            padding: 0.8rem;
+            margin-top: 1rem;
+            border-radius: 4px;
+        }
+
+        /* 配置代码块 */
+        .code-block {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 1.5rem;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+        .code-block .key { color: #93c5fd; }
+        .code-block .value { color: #fbbf24; }
+        .code-block .comment { color: #94a3b8; }
+
+        .tip-box {
+            background: #f0f9ff;
+            border-left: 5px solid var(--brand-blue);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+        }
+        .tip-box strong { color: #0f172a; }
+
+        .config-section h2 {
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            color: var(--brand-dark);
+            border-left: 5px solid var(--brand-blue);
+            padding-left: 1rem;
+        }
+
+        .faq-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        .faq-item {
+            background: #ffffff;
+            border: 1px solid var(--border-line);
+            border-radius: 10px;
+            padding: 1.5rem;
+        }
+        .faq-item h4 {
+            color: var(--brand-dark);
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        footer {
+            background: #020617;
+            color: #94a3b8;
+            padding: 4rem 6%;
+            text-align: center;
+            font-size: 0.9rem;
+            border-top: 1px solid #1e293b;
+            margin-top: 3rem;
+        }
+
+        @media (max-width: 960px) {
+            header {
+                flex-direction: column;
+                gap: 1rem;
+                padding: 1.25rem 5%;
+            }
+            .nav-box {
+                flex-direction: column;
+                gap: 1rem;
+                width: 100%;
+                align-items: center;
+            }
+            nav {
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 0.4rem;
+            }
+            nav a { margin: 0 0.3rem; font-size: 0.88rem; }
+            .github-btn { margin-left: 0; }
+            .dns-hero h1 { font-size: 2rem; }
+            .dns-flow { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 500px) {
+            .dns-flow { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="/" class="logo">
+            <img src="logo.webp" alt="Clash verge rev 官网" width="160" height="38">
+            <span>Clash Verge 官网</span>
+        </a>
+        <div class="nav-box">
+            <nav>
+                <a href="index.html#kernel-evolution">内核原理解析</a>
+                <a href="download.html">客户端下载</a>
+                <a href="index.html#scenario-solution">落地场景</a>
+                <a href="index.html#technical-terms">核心术语表</a>
+                <a href="install.html">安装教程</a>
+                <a href="configuration.html">配置教程</a>
+                <a href="import-subscription.html">导入订阅</a>
+                <a href="enable-tun.html">开启TUN</a>
+                <a href="dns.html" class="nav-active">DNS配置</a>
+                <a href="wiki.html">📚 文档</a>
+            </nav>
+            <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/" class="github-btn" target="_blank" rel="noopener noreferrer">
+                <svg viewBox="0 0 16 16" version="1.1" aria-hidden="true"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+                GitHub 仓库
+            </a>
+        </div>
+    </header>
+
+    <main class="main-wrapper">
+        <section class="dns-hero">
+            <h1>🌐 掌控 DNS · Clash Verge Rev 域名解析优化全攻略</h1>
+            <p>从传统明文 DNS 到加密 DoH/DoT，再到 Fake‑IP 智能映射，构建高速、防污染、防泄漏的域名解析体系。</p>
+        </section>
+
+        <!-- 快速步骤图示 -->
+        <div class="dns-flow">
+            <div class="flow-card">
+                <div class="step-num">1</div>
+                <h3>选择 DNS 模式</h3>
+                <p>明确使用 Fake‑IP 还是 redir‑host，决定解析路径。</p>
+            </div>
+            <div class="flow-card">
+                <div class="step-num">2</div>
+                <h3>配置加密服务器</h3>
+                <p>填入 DoH/DoT 地址，替换运营商默认 DNS。</p>
+            </div>
+            <div class="flow-card">
+                <div class="step-num">3</div>
+                <h3>设置解析策略</h3>
+                <p>区分国内与国外域名，选择不同解析线路。</p>
+            </div>
+            <div class="flow-card">
+                <div class="step-num">4</div>
+                <h3>验证防泄漏</h3>
+                <p>通过在线工具确认 DNS 请求均经过加密通道。</p>
+            </div>
+        </div>
+
+        <!-- DNS 模式对比 -->
+        <h2 style="font-size: 2rem; margin-bottom: 1.5rem; color: var(--brand-dark); border-left: 5px solid var(--brand-blue); padding-left: 1rem;">📊 三大 DNS 模式深度对比</h2>
+        <div class="compare-grid">
+            <div class="compare-card">
+                <h3>📖 传统明文 DNS</h3>
+                <ul>
+                    <li>➕ 无额外配置</li>
+                    <li>➖ 容易被劫持、污染</li>
+                    <li>➖ 运营商可窥探所有域名</li>
+                    <li>➖ UDP 53 端口，无加密</li>
+                </ul>
+                <div class="highlight-box">
+                    ⚠️ 不推荐在生产环境长期使用。
+                </div>
+            </div>
+            <div class="compare-card">
+                <h3>🔒 加密 DNS (DoH/DoT)</h3>
+                <ul>
+                    <li>➕ 强加密，防窃听篡改</li>
+                    <li>➕ 可自选可信解析器</li>
+                    <li>➕ 支持 DNS over HTTPS</li>
+                    <li>➖ 解析延迟可能略高</li>
+                </ul>
+                <div class="highlight-box">
+                    ✅ 现代代理客户端的首选方案。
+                </div>
+            </div>
+            <div class="compare-card">
+                <h3>⚡ Fake‑IP 模式</h3>
+                <ul>
+                    <li>➕ 本地映射，响应极快</li>
+                    <li>➕ 彻底防止 DNS 泄漏</li>
+                    <li>➕ 规则匹配效率高</li>
+                    <li>➖ 需理解虚拟 IP 机制</li>
+                </ul>
+                <div class="highlight-box">
+                    🧠 Clash Verge Rev 的招牌功能，建议开启。
+                </div>
+            </div>
+        </div>
+
+        <!-- 配置方法：图形界面 + 配置文件 -->
+        <div class="config-section">
+            <h2>🛠️ 如何配置 DNS</h2>
+            <div class="compare-grid">
+                <div class="compare-card">
+                    <h3>方法一：图形界面（推荐）</h3>
+                    <p>打开 Clash Verge Rev，点击左侧 <strong>“DNS”</strong> 选项卡，即可看到可视化 DNS 设置。</p>
+                    <ul>
+                        <li>✅ 启用“DNS 服务器”并填入 DoH 地址</li>
+                        <li>✅ 开启“Fake‑IP”模式</li>
+                        <li>✅ 设置“备用 DNS”作为回退</li>
+                    </ul>
+                    <p style="margin-top: 0.8rem;">无需手动编辑 YAML，实时生效。</p>
+                </div>
+                <div class="compare-card">
+                    <h3>方法二：配置文件（高级）</h3>
+                    <p>编辑配置文件 <code>config.yaml</code>，直接添加 DNS 相关字段。</p>
+                    <div class="code-block">
+<span class="key">dns:</span>
+  <span class="key">enable:</span> <span class="value">true</span>
+  <span class="key">enhanced-mode:</span> <span class="value">fake-ip</span>
+  <span class="key">fake-ip-range:</span> <span class="value">198.18.0.1/16</span>
+  <span class="key">nameserver:</span>
+    - <span class="value">https://doh.pub/dns-query</span>
+    - <span class="value">tls://8.8.8.8</span>
+  <span class="key">fallback:</span>
+    - <span class="value">https://cloudflare-dns.com/dns-query</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fake‑IP 深度解析 -->
+        <h2 style="font-size: 2rem; margin: 2.5rem 0 1.5rem; color: var(--brand-dark); border-left: 5px solid var(--brand-blue); padding-left: 1rem;">🎭 Fake‑IP 深度解析</h2>
+        <div class="compare-grid">
+            <div class="compare-card">
+                <h3>工作原理</h3>
+                <p>Clash 将 DNS 查询结果映射为一个虚拟 IP 段（例如 <code>198.18.0.0/16</code>），后续流量匹配到该虚拟 IP 时，Clash 根据之前记录的真实目标地址进行代理转发。整个过程客户端只看到虚拟 IP，真正的 DNS 解析仅在代理端发生。</p>
+                <div class="highlight-box">
+                    🔐 彻底杜绝本地 DNS 泄漏，非常适合隐私敏感场景。
+                </div>
+            </div>
+            <div class="compare-card">
+                <h3>开启后的优势</h3>
+                <ul>
+                    <li>✅ DNS 请求不再发送到本地网络</li>
+                    <li>✅ 避免运营商 DNS 劫持与污染</li>
+                    <li>✅ 域名白名单匹配更精准</li>
+                    <li>✅ 结合规则实现“无泄漏代理”</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 高级技巧：分流 DNS -->
+        <div class="config-section">
+            <h2>🧩 高级技巧：DNS 分流</h2>
+            <div class="compare-card" style="grid-column: span 2;">
+                <h3>按域名分配解析服务器</h3>
+                <p>通过 <code>nameserver-policy</code> 字段，可为不同域名指定专用 DNS。例如国内域名用国内 DNS，其余走加密 DNS。</p>
+                <div class="code-block">
+<span class="key">dns:</span>
+  <span class="key">nameserver-policy:</span>
+    <span class="value">'+.cn'</span>: <span class="value">'114.114.114.114'</span>
+    <span class="value">'geosite:cn'</span>: <span class="value">'https://doh.pub/dns-query'</span>
+                </div>
+                <p>这样既能保证国内网站解析速度，又确保海外域名通过加密通道查询。</p>
+            </div>
+        </div>
+
+        <!-- 常见问题 -->
+        <h2 style="font-size: 2rem; margin: 2.5rem 0 1.5rem; color: var(--brand-dark);">❓ DNS 配置常见问题</h2>
+        <div class="faq-grid">
+            <div class="faq-item">
+                <h4>开启 Fake‑IP 后部分网站无法访问？</h4>
+                <p>可能是虚拟 IP 范围与本地网络冲突。尝试修改 <code>fake-ip-range</code> 为其他私有 IP 段，如 <code>172.16.0.0/16</code>。</p>
+            </div>
+            <div class="faq-item">
+                <h4>如何测试 DNS 是否泄漏？</h4>
+                <p>访问 <a href="https://ipleak.net" target="_blank" rel="noopener noreferrer">ipleak.net</a> 或 <a href="https://dnsleaktest.com" target="_blank" rel="noopener noreferrer">dnsleaktest.com</a>，查看显示的 DNS 服务器是否为你配置的加密服务器。</p>
+            </div>
+            <div class="faq-item">
+                <h4>DoH 和 DoT 选哪个？</h4>
+                <p>DoH (HTTPS) 端口 443，伪装成网页流量，不易被阻断。DoT (TLS) 端口 853，专用端口可能被 QoS。建议优先使用 DoH。</p>
+            </div>
+            <div class="faq-item">
+                <h4>Fake‑IP 模式下需要额外防火墙规则吗？</h4>
+                <p>通常不需要。但注意不要将虚拟 IP 段用于其他服务，Clash 会自动处理映射。</p>
+            </div>
+        </div>
+
+        <!-- 引导下一步 -->
+        <div style="text-align: center; margin: 3rem 0 2rem; background: #f8fafc; padding: 2rem; border-radius: 12px;">
+            <p style="font-size: 1.1rem; color: #475569;">🎉 配置好 DNS 后，别忘了搭配分流规则让代理更高效。</p>
+            <a href="rule.html" style="display: inline-block; margin-top: 1rem; background: var(--brand-blue); color: #fff; padding: 0.8rem 2rem; border-radius: 6px; text-decoration: none; font-weight: 600;">探索 Rule 模式 →</a>
+        </div>
+    </main>
+
+    <footer>
+        <div class="main-wrapper">
+            <p>&copy; 2026 Clash Verge Rev 官网下载中心. 所有技术内容基于社区公开文档，仅供学习与测试。请遵守当地法律法规。</p>
+        </div>
+    </footer>
+
+</body>
+</html>
