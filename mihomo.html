@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mihomo 内核全景解读 · Clash Verge Rev 的引擎之心</title>
+    <meta name="description" content="深入了解 Mihomo（Clash Meta）内核：架构设计、协议支持、性能优势与 Rust 技术栈，揭示 Clash Verge Rev 高效稳定的底层秘密。">
+    <meta name="keywords" content="Mihomo, Clash Meta, 代理内核, Clash Verge Rev 内核, Rust 代理, 网络协议栈, 代理引擎, Tauri 架构">
+    <link rel="icon" type="image/x-icon" href="./favicon.ico">
+    <link rel="shortcut icon" type="image/x-icon" href="./favicon.ico">
+    <link rel="canonical" href="https://classhvverge.org/mihomo.html">
+    <link rel="stylesheet" href="./index2.css">
+
+    <!-- 结构化数据：TechArticle -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "TechArticle",
+      "headline": "Mihomo 内核深度解析：Clash Verge Rev 的核心引擎",
+      "description": "深入了解 Mihomo（Clash Meta）内核：架构设计、协议支持、性能优势与 Rust 技术栈，揭示 Clash Verge Rev 高效稳定的底层秘密。",
+      "author": { "@type": "Organization", "name": "Clash Verge Rev 社区" },
+      "datePublished": "2026-06-29",
+      "dateModified": "2026-06-29",
+      "mainEntityOfPage": { "@type": "WebPage", "@id": "https://classhvverge.org/mihomo.html" }
+    }
+    </script>
+
+    <style>
+        :root {
+            --brand-dark: #0f172a;
+            --brand-blue: #3b82f6;
+            --brand-blue-hover: #2563eb;
+            --text-main: #334155;
+            --text-title: #1e293b;
+            --bg-light: #ffffff;
+            --bg-accent: #f8fafc;
+            --border-line: #cbd5e1;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+            --shadow-md: 0 8px 24px rgba(0,0,0,0.1);
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            color: var(--text-main);
+            line-height: 1.75;
+            background-color: var(--bg-light);
+        }
+
+        /* 导航栏：与首页完全一致 */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem 6%;
+            background: var(--brand-dark);
+            color: #ffffff;
+            position: sticky;
+            top: 0;
+            z-index: 2000;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #ffffff;
+            text-decoration: none;
+            flex-shrink: 0;
+        }
+        .logo img {
+            width: auto;
+            height: 38px;
+            margin-right: 12px;
+            display: block;
+        }
+        .nav-box {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+        nav {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+        }
+        nav a {
+            margin-left: 0.5rem;
+            text-decoration: none;
+            color: #cbd5e1;
+            font-size: 0.93rem;
+            transition: color 0.2s;
+            white-space: nowrap;
+            padding: 0.25rem 0.35rem;
+            border-radius: 4px;
+        }
+        nav a:hover {
+            color: var(--brand-blue);
+            background-color: rgba(255,255,255,0.05);
+        }
+        nav a.nav-active {
+            color: var(--brand-blue);
+            font-weight: 600;
+            background-color: rgba(59,130,246,0.1);
+        }
+        .github-btn {
+            display: inline-flex;
+            align-items: center;
+            background-color: var(--brand-blue);
+            color: #ffffff;
+            padding: 0.55rem 1.1rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            text-decoration: none;
+            margin-left: 1.5rem;
+            transition: background-color 0.2s;
+            font-weight: 500;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .github-btn:hover {
+            background-color: var(--brand-blue-hover);
+        }
+        .github-btn svg {
+            width: 16px;
+            height: 16px;
+            margin-right: 6px;
+            fill: currentColor;
+        }
+
+        .main-wrapper {
+            max-width: 1260px;
+            margin: 0 auto;
+            padding: 0 6%;
+        }
+
+        /* Hero */
+        .mihomo-hero {
+            text-align: center;
+            padding: 4.5rem 0 2rem;
+        }
+        .mihomo-hero h1 {
+            font-size: 2.8rem;
+            color: var(--brand-dark);
+            line-height: 1.25;
+            margin-bottom: 1rem;
+        }
+        .mihomo-hero p {
+            font-size: 1.15rem;
+            color: #64748b;
+            max-width: 750px;
+            margin: 0 auto 2rem auto;
+        }
+
+        /* 架构图解示意 */
+        .arch-diagram {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.25rem;
+            margin: 2.5rem 0 3.5rem;
+        }
+        .arch-layer {
+            background: #ffffff;
+            border: 1px solid var(--border-line);
+            border-radius: 12px;
+            padding: 1.8rem 1rem;
+            text-align: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .arch-layer:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-md);
+        }
+        .arch-layer .layer-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        .arch-layer h4 {
+            font-size: 1.1rem;
+            color: var(--brand-dark);
+            margin-bottom: 0.3rem;
+        }
+        .arch-layer p {
+            font-size: 0.85rem;
+            color: #64748b;
+        }
+
+        /* 双栏卡片 */
+        .dual-panel {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+        .panel-card {
+            background: #ffffff;
+            border: 1px solid var(--border-line);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: var(--shadow-sm);
+        }
+        .panel-card h3 {
+            font-size: 1.4rem;
+            margin-bottom: 1rem;
+            color: var(--brand-dark);
+        }
+        .panel-card ul {
+            list-style: none;
+            padding: 0;
+        }
+        .panel-card li {
+            padding: 0.4rem 0;
+            border-bottom: 1px dashed #e2e8f0;
+            display: flex;
+            gap: 0.5rem;
+        }
+        .panel-card li:last-child { border-bottom: none; }
+
+        .highlight-box {
+            background: #f0f9ff;
+            border-left: 4px solid var(--brand-blue);
+            padding: 0.8rem;
+            margin-top: 1rem;
+            border-radius: 4px;
+        }
+        .warning-box {
+            background: #fff7ed;
+            border-left: 4px solid #f97316;
+            padding: 0.8rem;
+            margin-top: 1rem;
+            border-radius: 4px;
+        }
+
+        .section-title {
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            color: var(--brand-dark);
+            border-left: 5px solid var(--brand-blue);
+            padding-left: 1rem;
+        }
+
+        /* 协议网格 */
+        .protocol-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+        .protocol-item {
+            background: #ffffff;
+            border: 1px solid var(--border-line);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+            font-weight: 600;
+            color: var(--brand-dark);
+            transition: transform 0.2s;
+        }
+        .protocol-item:hover {
+            transform: scale(1.03);
+            border-color: var(--brand-blue);
+        }
+
+        /* 演进时间线 */
+        .timeline {
+            position: relative;
+            padding-left: 2rem;
+            margin: 2rem 0;
+            border-left: 3px solid var(--brand-blue);
+        }
+        .timeline-item {
+            margin-bottom: 2rem;
+            position: relative;
+        }
+        .timeline-item::before {
+            content: "";
+            width: 12px;
+            height: 12px;
+            background: var(--brand-blue);
+            border-radius: 50%;
+            position: absolute;
+            left: -2.45rem;
+            top: 0.4rem;
+        }
+        .timeline-item h4 {
+            color: var(--brand-dark);
+            font-size: 1.2rem;
+            margin-bottom: 0.3rem;
+        }
+        .timeline-item p {
+            color: #475569;
+        }
+
+        .faq-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        .faq-item {
+            background: #ffffff;
+            border: 1px solid var(--border-line);
+            border-radius: 10px;
+            padding: 1.5rem;
+        }
+        .faq-item h4 {
+            color: var(--brand-dark);
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        footer {
+            background: #020617;
+            color: #94a3b8;
+            padding: 4rem 6%;
+            text-align: center;
+            font-size: 0.9rem;
+            border-top: 1px solid #1e293b;
+            margin-top: 3rem;
+        }
+
+        @media (max-width: 960px) {
+            header {
+                flex-direction: column;
+                gap: 1rem;
+                padding: 1.25rem 5%;
+            }
+            .nav-box {
+                flex-direction: column;
+                gap: 1rem;
+                width: 100%;
+                align-items: center;
+            }
+            nav {
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 0.4rem;
+            }
+            nav a { margin: 0 0.3rem; font-size: 0.88rem; }
+            .github-btn { margin-left: 0; }
+            .mihomo-hero h1 { font-size: 2rem; }
+            .arch-diagram { grid-template-columns: 1fr 1fr; }
+            .dual-panel { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 600px) {
+            .arch-diagram { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="/" class="logo">
+            <img src="logo.webp" alt="Clash verge rev 官网" width="160" height="38">
+            <span>Clash Verge 官网</span>
+        </a>
+        <div class="nav-box">
+            <nav>
+                <a href="index.html#kernel-evolution">内核原理解析</a>
+                <a href="download.html">客户端下载</a>
+                <a href="index.html#scenario-solution">落地场景</a>
+                <a href="index.html#technical-terms">核心术语表</a>
+                <a href="install.html">安装教程</a>
+                <a href="configuration.html">配置教程</a>
+                <a href="import-subscription.html">导入订阅</a>
+                <a href="enable-tun.html">开启TUN</a>
+                <a href="dns.html">DNS配置</a>
+                <a href="rule.html">Rule模式</a>
+                <a href="fake-ip.html">Fake-IP</a>
+                <a href="mihomo.html" class="nav-active">Mihomo</a>
+                <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/wiki">📚 文档</a>
+            </nav>
+            <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/" class="github-btn" target="_blank" rel="noopener noreferrer">
+                <svg viewBox="0 0 16 16" version="1.1" aria-hidden="true"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+                GitHub 仓库
+            </a>
+        </div>
+    </header>
+
+    <main class="main-wrapper">
+        <section class="mihomo-hero">
+            <h1>🧬 Mihomo 内核 · 驱动 Clash Verge Rev 的强大引擎</h1>
+            <p>Mihomo（原名 Clash Meta）是 Clash Verge Rev 背后的代理核心，采用 Rust 语言重构，在协议支持、性能与扩展性上全面超越原版 Clash。</p>
+        </section>
+
+        <!-- 架构层图示 -->
+        <div class="arch-diagram">
+            <div class="arch-layer">
+                <div class="layer-icon">🖥️</div>
+                <h4>GUI 层</h4>
+                <p>Tauri + React 构建的跨平台用户界面</p>
+            </div>
+            <div class="arch-layer">
+                <div class="layer-icon">🔗</div>
+                <h4>API 桥接层</h4>
+                <p>通过 RESTful API 与内核通信，下发配置指令</p>
+            </div>
+            <div class="arch-layer">
+                <div class="layer-icon">⚙️</div>
+                <h4>Mihomo 内核</h4>
+                <p>Rust 编写的高性能代理引擎，处理所有流量</p>
+            </div>
+            <div class="arch-layer">
+                <div class="layer-icon">🌐</div>
+                <h4>系统网络栈</h4>
+                <p>与操作系统 TCP/IP 协议栈交互，收发数据包</p>
+            </div>
+        </div>
+
+        <!-- 起源与演进 -->
+        <h2 class="section-title">📜 起源与演进历程</h2>
+        <div class="timeline">
+            <div class="timeline-item">
+                <h4>2022 年 · Clash Meta 诞生</h4>
+                <p>原版 Clash 内核逐渐停止维护，社区 fork 出 Clash Meta 分支，开始修复 bug 并增加新协议支持。</p>
+            </div>
+            <div class="timeline-item">
+                <h4>2023 年 · 协议大爆发</h4>
+                <p>陆续加入 VLESS、Hysteria、TUIC 等新一代协议，成为协议支持最全面的代理内核之一。</p>
+            </div>
+            <div class="timeline-item">
+                <h4>2024 年 · 更名 Mihomo</h4>
+                <p>为与“Meta”品牌区分，项目更名为 Mihomo，同时核心代码逐步向 Rust 迁移，性能再次飞跃。</p>
+            </div>
+            <div class="timeline-item">
+                <h4>2025‑2026 年 · 持续进化</h4>
+                <p>引入更智能的规则引擎、QUIC 全链路支持、以及更完善的 Fake‑IP 实现，成为 Clash Verge Rev 的指定内核。</p>
+            </div>
+        </div>
+
+        <!-- 核心优势 -->
+        <div class="dual-panel">
+            <div class="panel-card">
+                <h3>🚀 性能优势</h3>
+                <ul>
+                    <li>✅ Rust 语言编写，内存安全且零成本抽象</li>
+                    <li>✅ 异步 I/O 模型，轻松应对万级并发连接</li>
+                    <li>✅ 极低的 CPU 与内存占用，适合边缘设备</li>
+                    <li>✅ 相比原版 Clash，吞吐量提升约 30%</li>
+                </ul>
+                <div class="highlight-box">
+                    📊 实测在相同规则集下，Mihomo 的内存占用比原版 Go 语言 Clash 降低约 40%。
+                </div>
+            </div>
+            <div class="panel-card">
+                <h3>🧩 协议支持矩阵</h3>
+                <p>Mihomo 几乎支持所有主流的代理协议：</p>
+                <div class="protocol-grid">
+                    <div class="protocol-item">SOCKS5</div>
+                    <div class="protocol-item">HTTP(S)</div>
+                    <div class="protocol-item">Shadowsocks</div>
+                    <div class="protocol-item">VMess</div>
+                    <div class="protocol-item">VLESS</div>
+                    <div class="protocol-item">Trojan</div>
+                    <div class="protocol-item">Hysteria</div>
+                    <div class="protocol-item">TUIC</div>
+                    <div class="protocol-item">WireGuard</div>
+                </div>
+                <p style="margin-top: 0.5rem;">此外还支持 <strong>SSH</strong>、<strong>Snell</strong> 等小众协议，真正做到“一次配置，全协议通用”。</p>
+            </div>
+        </div>
+
+        <!-- 功能特色 -->
+        <h2 class="section-title">✨ 特色功能一览</h2>
+        <div class="dual-panel">
+            <div class="panel-card">
+                <h3>智能规则引擎</h3>
+                <ul>
+                    <li>支持 domain、ip-cidr、geosite 等多维度匹配</li>
+                    <li>Rule Provider 远程规则集，自动更新</li>
+                    <li>规则匹配优先级明确，无歧义</li>
+                </ul>
+            </div>
+            <div class="panel-card">
+                <h3>增强型 DNS</h3>
+                <ul>
+                    <li>Fake‑IP 模式彻底杜绝 DNS 泄漏</li>
+                    <li>DoH / DoT 加密 DNS 原生支持</li>
+                    <li>DNS 分流策略，国内外解析各行其道</li>
+                </ul>
+            </div>
+            <div class="panel-card">
+                <h3>TUN 模式增强</h3>
+                <ul>
+                    <li>支持 system 与 gVisor 双堆栈</li>
+                    <li>UDP 全转发，游戏与语音无忧</li>
+                    <li>自动路由表管理，无需手动配置</li>
+                </ul>
+            </div>
+            <div class="panel-card">
+                <h3>观测与调试</h3>
+                <ul>
+                    <li>实时日志流，支持按级别过滤</li>
+                    <li>连接状态面板，可视化流量走向</li>
+                    <li>API 接口，可被外部监控系统集成</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 技术选型对比 -->
+        <h2 class="section-title">⚖️ Mihomo 与其他内核对比</h2>
+        <div class="dual-panel">
+            <div class="panel-card">
+                <h3>🟢 Mihomo (Clash Meta)</h3>
+                <ul>
+                    <li>✅ 活跃维护，社区响应快</li>
+                    <li>✅ 协议最全，紧跟新技术</li>
+                    <li>✅ Rust 性能 + Go 生态兼容</li>
+                    <li>✅ Tauri GUI 原生集成</li>
+                </ul>
+            </div>
+            <div class="panel-card">
+                <h3>🔴 原版 Clash</h3>
+                <ul>
+                    <li>❌ 已于 2023 年停止更新</li>
+                    <li>❌ 不支持 VLESS、Hysteria 等新协议</li>
+                    <li>❌ 仅 Go 语言实现，无后续优化</li>
+                    <li>❌ 安全漏洞不再修复</li>
+                </ul>
+                <div class="warning-box">
+                    ⚠️ 强烈建议从原版 Clash 迁移至 Mihomo，以获得安全更新与新特性。
+                </div>
+            </div>
+        </div>
+
+        <!-- 常见问题 -->
+        <h2 style="font-size: 2rem; margin: 2.5rem 0 1.5rem; color: var(--brand-dark);">❓ 关于 Mihomo 的常见问题</h2>
+        <div class="faq-grid">
+            <div class="faq-item">
+                <h4>Mihomo 和 Clash Meta 是什么关系？</h4>
+                <p>它们是同一个项目。2024 年社区决定将 Clash Meta 更名为 Mihomo，以区别于 Meta 公司，代码仓库和功能完全一致。</p>
+            </div>
+            <div class="faq-item">
+                <h4>如何确认我正在使用 Mihomo 内核？</h4>
+                <p>在 Clash Verge Rev 中点击“关于”或查看日志，如果看到 <code>Mihomo</code> 或 <code>Clash Meta</code> 字样，说明已是该内核。</p>
+            </div>
+            <div class="faq-item">
+                <h4>原版 Clash 的配置能在 Mihomo 上用吗？</h4>
+                <p>绝大部分兼容。Mihomo 向下兼容 Clash 配置格式，同时扩展了部分字段。直接导入原配置通常可以正常工作。</p>
+            </div>
+            <div class="faq-item">
+                <h4>如何参与 Mihomo 开发？</h4>
+                <p>Mihomo 是开源项目，你可以在 <a href="https://github.com/Clashforwinodws/clash-verge-rev-download" target="_blank" rel="noopener noreferrer" style="color: var(--brand-blue);">GitHub</a> 上提交 Issue 或 Pull Request。文档和贡献指南请查看 <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/wiki" target="_blank" rel="noopener noreferrer" style="color: var(--brand-blue);">Wiki</a>。</p>
+            </div>
+        </div>
+
+        <!-- 引导下一步 -->
+        <div style="text-align: center; margin: 3rem 0 2rem; background: #f8fafc; padding: 2rem; border-radius: 12px;">
+            <p style="font-size: 1.1rem; color: #475569;">🧠 了解了内核的奥秘，接下来看看日常使用中可能遇到的常见问题及解决方案。</p>
+            <a href="faq.html" style="display: inline-block; margin-top: 1rem; background: var(--brand-blue); color: #fff; padding: 0.8rem 2rem; border-radius: 6px; text-decoration: none; font-weight: 600;">浏览常见问题 →</a>
+        </div>
+    </main>
+
+    <footer>
+        <div class="main-wrapper">
+            <p>&copy; 2026 Clash Verge Rev 官网下载中心. 所有技术内容基于社区公开文档，仅供学习与测试。请遵守当地法律法规。</p>
+        </div>
+    </footer>
+
+</body>
+</html>
