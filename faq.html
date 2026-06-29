@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clash Verge Rev 常见问题 · 排错宝典与快速诊断</title>
+    <meta name="description" content="汇总 Clash Verge Rev 使用过程中最常见的安装、配置、连接、TUN 模式与 DNS 问题，提供清晰解决方案与交互式排查指南。">
+    <meta name="keywords" content="Clash Verge Rev FAQ, Clash Verge Rev常见问题, 故障排除, 无法连接, TUN 无法上网, DNS 泄漏, 配置问题, 代理失效, 安装错误">
+    <link rel="icon" type="image/x-icon" href="./favicon.ico">
+    <link rel="shortcut icon" type="image/x-icon" href="./favicon.ico">
+    <link rel="canonical" href="https://classhvverge.org/faq.html">
+    <link rel="stylesheet" href="./index2.css">
+
+    <!-- 结构化数据 FAQPage -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Clash Verge Rev 无法启动怎么办？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "检查是否被杀毒软件拦截，尝试以管理员身份运行，或查看日志定位错误。"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "开启 TUN 模式后无法上网？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "确保已授予管理员权限，检查 DNS 设置，尝试切换 TUN 堆栈为 gvisor。"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "如何测试 DNS 是否泄漏？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "访问 ipleak.net 或 dnsleaktest.com，查看显示的 DNS 服务器是否为你配置的加密服务器。"
+          }
+        }
+      ]
+    }
+    </script>
+
+    <style>
+        :root {
+            --brand-dark: #0f172a;
+            --brand-blue: #3b82f6;
+            --brand-blue-hover: #2563eb;
+            --text-main: #334155;
+            --text-title: #1e293b;
+            --bg-light: #ffffff;
+            --bg-accent: #f8fafc;
+            --border-line: #cbd5e1;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+            --shadow-md: 0 8px 24px rgba(0,0,0,0.1);
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            color: var(--text-main);
+            line-height: 1.75;
+            background-color: var(--bg-light);
+        }
+
+        /* 导航栏：与首页完全一致 */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem 6%;
+            background: var(--brand-dark);
+            color: #ffffff;
+            position: sticky;
+            top: 0;
+            z-index: 2000;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #ffffff;
+            text-decoration: none;
+            flex-shrink: 0;
+        }
+        .logo img {
+            width: auto;
+            height: 38px;
+            margin-right: 12px;
+            display: block;
+        }
+        .nav-box {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+        nav {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+        }
+        nav a {
+            margin-left: 0.5rem;
+            text-decoration: none;
+            color: #cbd5e1;
+            font-size: 0.93rem;
+            transition: color 0.2s;
+            white-space: nowrap;
+            padding: 0.25rem 0.35rem;
+            border-radius: 4px;
+        }
+        nav a:hover {
+            color: var(--brand-blue);
+            background-color: rgba(255,255,255,0.05);
+        }
+        nav a.nav-active {
+            color: var(--brand-blue);
+            font-weight: 600;
+            background-color: rgba(59,130,246,0.1);
+        }
+        .github-btn {
+            display: inline-flex;
+            align-items: center;
+            background-color: var(--brand-blue);
+            color: #ffffff;
+            padding: 0.55rem 1.1rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            text-decoration: none;
+            margin-left: 1.5rem;
+            transition: background-color 0.2s;
+            font-weight: 500;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .github-btn:hover {
+            background-color: var(--brand-blue-hover);
+        }
+        .github-btn svg {
+            width: 16px;
+            height: 16px;
+            margin-right: 6px;
+            fill: currentColor;
+        }
+
+        .main-wrapper {
+            max-width: 1260px;
+            margin: 0 auto;
+            padding: 0 6%;
+        }
+
+        /* FAQ Hero */
+        .faq-hero {
+            text-align: center;
+            padding: 4.5rem 0 2rem;
+        }
+        .faq-hero h1 {
+            font-size: 2.8rem;
+            color: var(--brand-dark);
+            line-height: 1.25;
+            margin-bottom: 1rem;
+        }
+        .faq-hero p {
+            font-size: 1.15rem;
+            color: #64748b;
+            max-width: 700px;
+            margin: 0 auto 2rem auto;
+        }
+
+        /* 搜索框 */
+        .search-box {
+            max-width: 600px;
+            margin: 0 auto 2.5rem auto;
+            display: flex;
+            gap: 0.5rem;
+        }
+        .search-box input {
+            flex: 1;
+            padding: 0.8rem 1.2rem;
+            border: 2px solid var(--border-line);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--brand-blue);
+        }
+        .search-box button {
+            background: var(--brand-blue);
+            color: #fff;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+        .search-box button:hover {
+            background: var(--brand-blue-hover);
+        }
+
+        /* 热门问题卡片 */
+        .hot-questions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0 3rem;
+        }
+        .hot-card {
+            background: #ffffff;
+            border: 1px solid var(--border-line);
+            border-radius: 10px;
+            padding: 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .hot-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-md);
+            border-color: var(--brand-blue);
+        }
+        .hot-card .hot-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        .hot-card h3 {
+            font-size: 1rem;
+            color: var(--brand-dark);
+        }
+
+        /* 分类选项卡 */
+        .tab-bar {
+            display: flex;
+            gap: 0.5rem;
+            margin: 2rem 0 1.5rem;
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            padding: 0.7rem 1.5rem;
+            background: #f1f5f9;
+            border: 1px solid var(--border-line);
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            background: var(--brand-blue);
+            color: #ffffff;
+            border-color: var(--brand-blue);
+        }
+
+        /* 手风琴 FAQ */
+        .faq-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+        .faq-entry {
+            background: #ffffff;
+            border: 1px solid var(--border-line);
+            border-radius: 10px;
+            overflow: hidden;
+            transition: box-shadow 0.2s;
+        }
+        .faq-entry:hover {
+            box-shadow: var(--shadow-sm);
+        }
+        .faq-question {
+            padding: 1.2rem 1.5rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            color: var(--brand-dark);
+            background: #fafbfc;
+            transition: background 0.2s;
+        }
+        .faq-question:hover {
+            background: #f1f5f9;
+        }
+        .faq-question::after {
+            content: "▼";
+            font-size: 0.8rem;
+            transition: transform 0.2s;
+            color: #64748b;
+        }
+        .faq-entry.open .faq-question::after {
+            transform: rotate(180deg);
+        }
+        .faq-answer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease, padding 0.3s ease;
+            padding: 0 1.5rem;
+        }
+        .faq-entry.open .faq-answer {
+            max-height: 600px;
+            padding: 1rem 1.5rem 1.5rem;
+        }
+        .faq-answer p {
+            color: #475569;
+        }
+        .faq-answer code {
+            background: #f1f5f9;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        /* 快速诊断 */
+        .diagnose-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+        .diagnose-card {
+            background: #ffffff;
+            border: 1px solid var(--border-line);
+            border-radius: 12px;
+            padding: 1.8rem;
+            text-align: center;
+            transition: transform 0.2s;
+        }
+        .diagnose-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-md);
+        }
+        .diagnose-card .step-num {
+            display: inline-block;
+            width: 2.5rem;
+            height: 2.5rem;
+            background: var(--brand-dark);
+            color: #fff;
+            border-radius: 50%;
+            line-height: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+        .diagnose-card h4 {
+            margin-bottom: 0.5rem;
+            color: var(--brand-dark);
+        }
+
+        .community-box {
+            background: #f0f9ff;
+            border: 1px solid #bae6fd;
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            margin: 3rem 0 2rem;
+        }
+        .community-box a {
+            color: var(--brand-blue);
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        footer {
+            background: #020617;
+            color: #94a3b8;
+            padding: 4rem 6%;
+            text-align: center;
+            font-size: 0.9rem;
+            border-top: 1px solid #1e293b;
+            margin-top: 3rem;
+        }
+
+        @media (max-width: 960px) {
+            header {
+                flex-direction: column;
+                gap: 1rem;
+                padding: 1.25rem 5%;
+            }
+            .nav-box {
+                flex-direction: column;
+                gap: 1rem;
+                width: 100%;
+                align-items: center;
+            }
+            nav {
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 0.4rem;
+            }
+            nav a { margin: 0 0.3rem; font-size: 0.88rem; }
+            .github-btn { margin-left: 0; }
+            .faq-hero h1 { font-size: 2rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="/" class="logo">
+            <img src="logo.webp" alt="Clash verge rev 官网" width="160" height="38">
+            <span>Clash Verge 官网</span>
+        </a>
+        <div class="nav-box">
+            <nav>
+                <a href="index.html#kernel-evolution">内核原理解析</a>
+                <a href="download.html">客户端下载</a>
+                <a href="index.html#scenario-solution">落地场景</a>
+                <a href="index.html#technical-terms">核心术语表</a>
+                <a href="install.html">安装教程</a>
+                <a href="configuration.html">配置教程</a>
+                <a href="import-subscription.html">导入订阅</a>
+                <a href="enable-tun.html">开启TUN</a>
+                <a href="dns.html">DNS配置</a>
+                <a href="rule.html">Rule模式</a>
+                <a href="fake-ip.html">Fake-IP</a>
+                <a href="mihomo.html">Mihomo</a>
+                <a href="faq.html" class="nav-active">常见问题</a>
+                <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/wiki">📚 文档</a>
+            </nav>
+            <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/" class="github-btn" target="_blank" rel="noopener noreferrer">
+                <svg viewBox="0 0 16 16" version="1.1" aria-hidden="true"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+                GitHub 仓库
+            </a>
+        </div>
+    </header>
+
+    <main class="main-wrapper">
+        <section class="faq-hero">
+            <h1>❓ 常见问题与排错指南</h1>
+            <p>遇到问题不用慌。这里汇集了用户最常遇到的安装、配置、连接、TUN 和 DNS 问题，并提供清晰的解决路径。</p>
+        </section>
+
+        <!-- 搜索框 -->
+        <div class="search-box">
+            <input type="text" id="faqSearch" placeholder="输入关键词快速查找问题..." autocomplete="off">
+            <button id="searchBtn">🔍 搜索</button>
+        </div>
+
+        <!-- 热门问题快速入口 -->
+        <div class="hot-questions">
+            <div class="hot-card" data-scroll="install-fail">
+                <div class="hot-icon">🚫</div>
+                <h3>安装失败 / 无法启动</h3>
+            </div>
+            <div class="hot-card" data-scroll="tun-offline">
+                <div class="hot-icon">🔌</div>
+                <h3>开启 TUN 后断网</h3>
+            </div>
+            <div class="hot-card" data-scroll="dns-leak">
+                <div class="hot-icon">💧</div>
+                <h3>DNS 泄漏检测</h3>
+            </div>
+            <div class="hot-card" data-scroll="no-nodes">
+                <div class="hot-icon">📭</div>
+                <h3>导入订阅无节点</h3>
+            </div>
+            <div class="hot-card" data-scroll="slow-speed">
+                <div class="hot-icon">🐢</div>
+                <h3>代理速度慢</h3>
+            </div>
+        </div>
+
+        <!-- 分类选项卡 -->
+        <div class="tab-bar">
+            <button class="tab-btn active" data-category="all">全部问题</button>
+            <button class="tab-btn" data-category="install">安装与启动</button>
+            <button class="tab-btn" data-category="config">配置与订阅</button>
+            <button class="tab-btn" data-category="connection">连接与速度</button>
+            <button class="tab-btn" data-category="tun">TUN 与系统代理</button>
+            <button class="tab-btn" data-category="dns">DNS 与 Fake‑IP</button>
+        </div>
+
+        <!-- FAQ 列表 -->
+        <div class="faq-list" id="faqContainer">
+            <!-- 安装类 -->
+            <div class="faq-entry" data-category="install">
+                <div class="faq-question">Windows 安装时提示“已阻止此应用”</div>
+                <div class="faq-answer"><p>因为应用未使用微软商店签名。点击“更多信息”，然后选择“仍要运行”。也可右键安装文件 → 属性 → 解除锁定。</p></div>
+            </div>
+            <div class="faq-entry" data-category="install">
+                <div class="faq-question">macOS 提示“无法验证开发者”</div>
+                <div class="faq-answer"><p>前往“系统设置” → “隐私与安全性”，在底部找到“已阻止使用…”，点击“仍要打开”。或右键点击应用图标选择“打开”。</p></div>
+            </div>
+            <div class="faq-entry" data-category="install">
+                <div class="faq-question">Linux 下 AppImage 无法运行</div>
+                <div class="faq-answer"><p>确保已安装 FUSE 库：<code>sudo apt install libfuse2</code>，并赋予执行权限 <code>chmod +x ./Clash.Verge*.AppImage</code>。</p></div>
+            </div>
+            <div class="faq-entry" data-category="install">
+                <div class="faq-question">启动后没有窗口或闪退</div>
+                <div class="faq-answer"><p>尝试从终端启动查看错误日志。Windows 可查看事件查看器，macOS/Linux 在终端输入应用名运行。检查是否有其他代理软件冲突。</p></div>
+            </div>
+            <!-- 配置类 -->
+            <div class="faq-entry" data-category="config">
+                <div class="faq-question">导入订阅后节点列表为空</div>
+                <div class="faq-answer"><p>检查订阅链接是否有效（浏览器打开看是否返回 YAML 内容）。部分机场需要订阅转换，或联系提供商获取 Clash 专用链接。</p></div>
+            </div>
+            <div class="faq-entry" data-category="config">
+                <div class="faq-question">配置文件语法错误导致启动失败</div>
+                <div class="faq-answer"><p>使用在线 YAML 校验工具检查缩进和格式。常见错误：多余空格、缩进不一致、字段名拼写错误。</p></div>
+            </div>
+            <div class="faq-entry" data-category="config">
+                <div class="faq-question">如何备份和恢复配置？</div>
+                <div class="faq-answer"><p>在配置页面右键选择“导出”，保存为 .yaml 文件。恢复时使用“从文件导入”。也可直接复制 <code>~/.config/clash-verge-rev</code> 目录。</p></div>
+            </div>
+            <!-- 连接类 -->
+            <div class="faq-entry" data-category="connection">
+                <div class="faq-question">代理速度很慢或不稳定</div>
+                <div class="faq-answer"><p>尝试切换延迟更低的节点；检查策略组是否为 <code>url-test</code> 自动选择；关闭其他占用带宽的应用；确认本地网络正常。</p></div>
+            </div>
+            <div class="faq-entry" data-category="connection">
+                <div class="faq-question">某些网站无法访问（部分阻断）</div>
+                <div class="faq-answer"><p>可能是规则未覆盖。手动添加域名规则，或将该域名加入代理策略组。同时检查 DNS 是否返回了错误 IP。</p></div>
+            </div>
+            <div class="faq-entry" data-category="connection">
+                <div class="faq-question">手机/其他设备如何共享代理？</div>
+                <div class="faq-answer"><p>在 Clash Verge Rev 设置中开启“允许局域网连接”，其他设备将代理 IP 设为本机 IP，端口为 7890。</p></div>
+            </div>
+            <!-- TUN 类 -->
+            <div class="faq-entry" data-category="tun">
+                <div class="faq-question">开启 TUN 模式后完全无法上网</div>
+                <div class="faq-answer"><p>首先确认已授予管理员权限。尝试在设置中切换 TUN 堆栈为 <code>gvisor</code>；检查 DNS 设置；重启客户端或电脑。</p></div>
+            </div>
+            <div class="faq-entry" data-category="tun">
+                <div class="faq-question">游戏或语音软件延迟高</div>
+                <div class="faq-answer"><p>确保 TUN 模式下 UDP 转发正常。可尝试为游戏单独添加直连规则，避免代理绕路。</p></div>
+            </div>
+            <div class="faq-entry" data-category="tun">
+                <div class="faq-question">虚拟网卡创建失败</div>
+                <div class="faq-answer"><p>Linux 需加载 tun 模块：<code>sudo modprobe tun</code>。Windows 检查是否有其他 VPN 软件占用，卸载 Wintun 驱动后重启。</p></div>
+            </div>
+            <!-- DNS 类 -->
+            <div class="faq-entry" data-category="dns">
+                <div class="faq-question">如何检测 DNS 是否泄漏？</div>
+                <div class="faq-answer"><p>访问 <a href="https://ipleak.net" target="_blank" rel="noopener">ipleak.net</a> 或 <a href="https://dnsleaktest.com" target="_blank" rel="noopener">dnsleaktest.com</a>，查看显示的 DNS 服务器。应只出现你配置的加密 DNS。</p></div>
+            </div>
+            <div class="faq-entry" data-category="dns">
+                <div class="faq-question">Fake‑IP 模式下某些局域网设备无法访问</div>
+                <div class="faq-answer"><p>将局域网域名（如 *.lan、*.local）加入 <code>fake-ip-filter</code> 列表，或在规则中对局域网 IP 段设置 DIRECT。</p></div>
+            </div>
+            <div class="faq-entry" data-category="dns">
+                <div class="faq-question">DNS 查询非常慢</div>
+                <div class="faq-answer"><p>检查配置的 DoH/DoT 服务器是否可达。可更换国内 DNS 服务商（如 doh.pub）作为备用。适当增大缓存时间。</p></div>
+            </div>
+        </div>
+
+        <!-- 快速诊断流程图 -->
+        <h2 style="font-size: 2rem; margin: 3rem 0 1.5rem; color: var(--brand-dark); border-left: 5px solid var(--brand-blue); padding-left: 1rem;">🩺 快速诊断：我的代理为什么不工作？</h2>
+        <div class="diagnose-grid">
+            <div class="diagnose-card">
+                <div class="step-num">1</div>
+                <h4>检查系统代理是否开启</h4>
+                <p>托盘图标右键 → 确保“系统代理”已勾选。浏览器才会使用代理。</p>
+            </div>
+            <div class="diagnose-card">
+                <div class="step-num">2</div>
+                <h4>验证节点是否可用</h4>
+                <p>在“代理”页面点击节点测速，确认至少有一个节点延迟正常。</p>
+            </div>
+            <div class="diagnose-card">
+                <div class="step-num">3</div>
+                <h4>查看日志输出</h4>
+                <p>打开“日志”页面，观察是否有红色错误信息，如“dial timeout”表示连接超时。</p>
+            </div>
+            <div class="diagnose-card">
+                <div class="step-num">4</div>
+                <h4>排除其他代理软件干扰</h4>
+                <p>关闭其他 VPN/代理软件，避免端口冲突。重启电脑后仅启动 Clash Verge Rev。</p>
+            </div>
+        </div>
+
+        <!-- 社区贡献引导 -->
+        <div class="community-box">
+            <h3 style="font-size: 1.4rem; margin-bottom: 0.5rem;">🌍 没有找到你的问题？</h3>
+            <p>欢迎访问 <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/wiki" target="_blank" rel="noopener">GitHub Wiki 文档</a> 获取更多帮助，或在 Issues 中提问。你的反馈能帮助改进产品！</p>
+        </div>
+    </main>
+
+    <footer>
+        <div class="main-wrapper">
+            <p>&copy; 2026 Clash Verge Rev 官网下载中心. 所有技术内容基于社区公开文档，仅供学习与测试。请遵守当地法律法规。</p>
+        </div>
+    </footer>
+
+    <script>
+        (function() {
+            // 手风琴效果
+            const faqEntries = document.querySelectorAll('.faq-entry');
+            faqEntries.forEach(entry => {
+                const question = entry.querySelector('.faq-question');
+                question.addEventListener('click', () => {
+                    entry.classList.toggle('open');
+                });
+            });
+
+            // 分类筛选
+            const tabBtns = document.querySelectorAll('.tab-btn');
+            const allEntries = document.querySelectorAll('.faq-entry');
+            tabBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    tabBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    const category = btn.dataset.category;
+                    allEntries.forEach(entry => {
+                        if (category === 'all' || entry.dataset.category === category) {
+                            entry.style.display = '';
+                        } else {
+                            entry.style.display = 'none';
+                        }
+                    });
+                });
+            });
+
+            // 搜索功能
+            const searchInput = document.getElementById('faqSearch');
+            const searchBtn = document.getElementById('searchBtn');
+            function performSearch() {
+                const query = searchInput.value.trim().toLowerCase();
+                allEntries.forEach(entry => {
+                    const text = entry.textContent.toLowerCase();
+                    if (query === '' || text.includes(query)) {
+                        entry.style.display = '';
+                    } else {
+                        entry.style.display = 'none';
+                    }
+                });
+                // 重置分类按钮状态
+                tabBtns.forEach(b => b.classList.remove('active'));
+                document.querySelector('.tab-btn[data-category="all"]').classList.add('active');
+            }
+            searchBtn.addEventListener('click', performSearch);
+            searchInput.addEventListener('keyup', (e) => {
+                if (e.key === 'Enter') performSearch();
+            });
+
+            // 热门卡片点击滚动到对应问题
+            const hotCards = document.querySelectorAll('.hot-card');
+            hotCards.forEach(card => {
+                card.addEventListener('click', () => {
+                    const targetId = card.dataset.scroll;
+                    // 简单匹配，找到第一个包含关键字的条目并展开
+                    let found = null;
+                    const keywords = {
+                        'install-fail': '安装',
+                        'tun-offline': 'TUN',
+                        'dns-leak': 'DNS 泄漏',
+                        'no-nodes': '节点列表为空',
+                        'slow-speed': '速度慢'
+                    };
+                    const kw = keywords[targetId] || '';
+                    for (let entry of allEntries) {
+                        if (entry.textContent.includes(kw)) {
+                            found = entry;
+                            break;
+                        }
+                    }
+                    if (found) {
+                        found.classList.add('open');
+                        found.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                });
+            });
+        })();
+    </script>
+</body>
+</html>
