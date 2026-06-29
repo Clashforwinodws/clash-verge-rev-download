@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clash Verge Rev 导入订阅指南 · 一键添加节点 | 订阅链接教程</title>
+    <meta name="description" content="手把手教你获取 Clash 订阅链接并导入 Clash Verge Rev，支持订阅转换、自动更新与多订阅管理。新手也能轻松完成节点配置。">
+    <meta name="keywords" content="Clash Verge Rev导入订阅, Clash Verge Rev订阅教程, 订阅链接, 订阅转换, clash 节点导入, clash 配置订阅, 机场订阅">
+    <link rel="icon" type="image/x-icon" href="./favicon.ico">
+    <link rel="shortcut icon" type="image/x-icon" href="./favicon.ico">
+    <link rel="canonical" href="https://classhvverge.org/import-subscription.html">
+    <link rel="stylesheet" href="./index2.css">
+
+    <!-- 结构化数据 HowTo -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "如何导入订阅到 Clash Verge Rev",
+      "description": "从机场获取 Clash 订阅链接，并导入到 Clash Verge Rev 客户端的完整流程。",
+      "step": [
+        {
+          "@type": "HowToStep",
+          "position": 1,
+          "name": "获取订阅链接",
+          "text": "登录你的机场网站，复制 Clash 订阅 URL，或使用订阅转换工具生成。"
+        },
+        {
+          "@type": "HowToStep",
+          "position": 2,
+          "name": "打开客户端配置界面",
+          "text": "启动 Clash Verge Rev，点击左侧“配置”选项卡。"
+        },
+        {
+          "@type": "HowToStep",
+          "position": 3,
+          "name": "从 URL 导入",
+          "text": "点击“新建”按钮，选择“从 URL 导入”，粘贴订阅链接并保存。"
+        },
+        {
+          "@type": "HowToStep",
+          "position": 4,
+          "name": "激活配置并验证",
+          "text": "在配置列表中点击刚导入的配置，然后开启系统代理或 TUN 模式，测试网络连通性。"
+        }
+      ]
+    }
+    </script>
+
+    <style>
+        :root {
+            --brand-dark: #0f172a;
+            --brand-blue: #3b82f6;
+            --brand-blue-hover: #2563eb;
+            --text-main: #334155;
+            --text-title: #1e293b;
+            --bg-light: #ffffff;
+            --bg-accent: #f8fafc;
+            --border-line: #cbd5e1;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+            --shadow-md: 0 8px 24px rgba(0,0,0,0.1);
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            color: var(--text-main);
+            line-height: 1.75;
+            background-color: var(--bg-light);
+        }
+
+        /* 导航栏：与首页完全一致 */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem 6%;
+            background: var(--brand-dark);
+            color: #ffffff;
+            position: sticky;
+            top: 0;
+            z-index: 2000;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #ffffff;
+            text-decoration: none;
+            flex-shrink: 0;
+        }
+        .logo img {
+            width: auto;
+            height: 38px;
+            margin-right: 12px;
+            display: block;
+        }
+        .nav-box {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+        nav {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+        }
+        nav a {
+            margin-left: 0.5rem;
+            text-decoration: none;
+            color: #cbd5e1;
+            font-size: 0.93rem;
+            transition: color 0.2s;
+            white-space: nowrap;
+            padding: 0.25rem 0.35rem;
+            border-radius: 4px;
+        }
+        nav a:hover {
+            color: var(--brand-blue);
+            background-color: rgba(255,255,255,0.05);
+        }
+        nav a.nav-active {
+            color: var(--brand-blue);
+            font-weight: 600;
+            background-color: rgba(59,130,246,0.1);
+        }
+        .github-btn {
+            display: inline-flex;
+            align-items: center;
+            background-color: var(--brand-blue);
+            color: #ffffff;
+            padding: 0.55rem 1.1rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            text-decoration: none;
+            margin-left: 1.5rem;
+            transition: background-color 0.2s;
+            font-weight: 500;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .github-btn:hover {
+            background-color: var(--brand-blue-hover);
+        }
+        .github-btn svg {
+            width: 16px;
+            height: 16px;
+            margin-right: 6px;
+            fill: currentColor;
+        }
+
+        .main-wrapper {
+            max-width: 1260px;
+            margin: 0 auto;
+            padding: 0 6%;
+        }
+
+        /* 页面 Hero */
+        .sub-hero {
+            text-align: center;
+            padding: 4rem 0 2rem;
+        }
+        .sub-hero h1 {
+            font-size: 2.8rem;
+            color: var(--brand-dark);
+            line-height: 1.25;
+            margin-bottom: 1rem;
+        }
+        .sub-hero p {
+            font-size: 1.15rem;
+            color: #64748b;
+            max-width: 700px;
+            margin: 0 auto 2rem auto;
+        }
+
+        /* 步骤流程图 */
+        .steps-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.25rem;
+            margin: 2.5rem 0 3.5rem;
+        }
+        .step-card {
+            background: #ffffff;
+            border: 1px solid var(--border-line);
+            border-radius: 12px;
+            padding: 1.8rem 1.2rem;
+            text-align: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
+        }
+        .step-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-md);
+        }
+        .step-number {
+            display: inline-block;
+            width: 2.5rem;
+            height: 2.5rem;
+            background: var(--brand-dark);
+            color: #fff;
+            border-radius: 50%;
+            line-height: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+        .step-card h3 {
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+            color: var(--brand-dark);
+        }
+        .step-card p {
+            font-size: 0.9rem;
+            color: #475569;
+        }
+
+        /* 订阅方法卡片 */
+        .method-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+        .method-card {
+            background: #ffffff;
+            border: 1px solid var(--border-line);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.2s;
+        }
+        .method-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-md);
+        }
+        .method-card h3 {
+            font-size: 1.3rem;
+            color: var(--brand-dark);
+            margin-bottom: 0.75rem;
+        }
+        .method-card code {
+            background: #f1f5f9;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.95em;
+        }
+        .method-card .tip {
+            background: #f0f9ff;
+            border-left: 4px solid var(--brand-blue);
+            padding: 1rem;
+            margin-top: 1rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        /* 订阅转换工具区 */
+        .convert-box {
+            background: #f8fafc;
+            border: 1px solid var(--border-line);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 2rem 0;
+        }
+        .convert-box h3 {
+            font-size: 1.4rem;
+            margin-bottom: 1rem;
+            color: var(--brand-dark);
+        }
+
+        /* 常见问题 */
+        .faq-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        .faq-item {
+            background: #ffffff;
+            border: 1px solid var(--border-line);
+            border-radius: 10px;
+            padding: 1.5rem;
+        }
+        .faq-item h4 {
+            color: var(--brand-dark);
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .info-banner {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 8px;
+            padding: 1.25rem 1.5rem;
+            margin: 2rem 0;
+            color: #856404;
+        }
+
+        footer {
+            background: #020617;
+            color: #94a3b8;
+            padding: 4rem 6%;
+            text-align: center;
+            font-size: 0.9rem;
+            border-top: 1px solid #1e293b;
+            margin-top: 3rem;
+        }
+
+        @media (max-width: 960px) {
+            header {
+                flex-direction: column;
+                gap: 1rem;
+                padding: 1.25rem 5%;
+            }
+            .nav-box {
+                flex-direction: column;
+                gap: 1rem;
+                width: 100%;
+                align-items: center;
+            }
+            nav {
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 0.4rem;
+            }
+            nav a {
+                margin: 0 0.3rem;
+                font-size: 0.88rem;
+            }
+            .github-btn { margin-left: 0; }
+            .sub-hero h1 { font-size: 2rem; }
+            .steps-container {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        @media (max-width: 500px) {
+            .steps-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="/" class="logo">
+            <img src="logo.webp" alt="Clash verge rev 官网" width="160" height="38">
+            <span>Clash Verge 官网</span>
+        </a>
+        <div class="nav-box">
+            <nav>
+                <a href="index.html#kernel-evolution">内核原理解析</a>
+                <a href="download.html">客户端下载</a>
+                <a href="index.html#scenario-solution">落地场景</a>
+                <a href="index.html#technical-terms">核心术语表</a>
+                <a href="install.html">安装教程</a>
+                <a href="configuration.html">配置教程</a>
+                <a href="import-subscription.html" class="nav-active">导入订阅</a>
+                <a href="wiki.html">📚 文档</a>
+            </nav>
+            <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/" class="github-btn" target="_blank" rel="noopener noreferrer">
+                <svg viewBox="0 0 16 16" version="1.1" aria-hidden="true"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+                GitHub 仓库
+            </a>
+        </div>
+    </header>
+
+    <main class="main-wrapper">
+        <section class="sub-hero">
+            <h1>📥 Clash Verge Rev 导入订阅指南</h1>
+            <p>只需复制粘贴你的 Clash 订阅链接，一分钟内完成节点配置。支持多订阅管理、自动更新与自定义策略组。</p>
+        </section>
+
+        <!-- 四大步骤图示 -->
+        <div class="steps-container">
+            <div class="step-card">
+                <div class="step-number">1</div>
+                <h3>获取订阅链接</h3>
+                <p>从你的机场网站复制 Clash 订阅地址，或使用订阅转换工具生成。</p>
+            </div>
+            <div class="step-card">
+                <div class="step-number">2</div>
+                <h3>打开配置页面</h3>
+                <p>启动 Clash Verge Rev，点击左侧菜单的“配置”选项卡。</p>
+            </div>
+            <div class="step-card">
+                <div class="step-number">3</div>
+                <h3>从 URL 导入</h3>
+                <p>点击“新建” → “从 URL 导入”，粘贴链接并保存。</p>
+            </div>
+            <div class="step-card">
+                <div class="step-number">4</div>
+                <h3>启用并验证</h3>
+                <p>在配置列表中选中该配置，开启系统代理或 TUN 模式，测试网络连通性。</p>
+            </div>
+        </div>
+
+        <!-- 三种导入方法 -->
+        <h2 style="font-size: 2rem; margin-bottom: 1.5rem; color: var(--brand-dark); border-left: 5px solid var(--brand-blue); padding-left: 1rem;">📌 三种导入方法详解</h2>
+        <div class="method-grid">
+            <div class="method-card">
+                <h3>🔗 直接 URL 导入（推荐）</h3>
+                <p>大多数机场会提供形如 <code>https://your-airport.com/.../clash</code> 的订阅链接。在 Clash Verge Rev 的“配置”页面点击“新建”，选择“从 URL 导入”，粘贴该链接并点击确定。客户端会自动下载并解析节点。</p>
+                <div class="tip">
+                    💡 <strong>提示：</strong> 如果链接在国内无法直接访问，可尝试使用订阅转换服务（见下文）。
+                </div>
+            </div>
+            <div class="method-card">
+                <h3>📋 手动粘贴配置内容</h3>
+                <p>如果你已通过其他方式获得了完整的 YAML 配置文件内容（例如从订阅转换工具下载），可在“配置”页面选择“新建” → “手动编辑”，将内容粘贴到文本编辑器中并保存。</p>
+            </div>
+            <div class="method-card">
+                <h3>📁 从本地文件导入</h3>
+                <p>如果你已经将配置文件下载为 <code>.yaml</code> 或 <code>.yml</code> 文件，点击“从文件导入”选择该文件即可。适用于备份恢复或多设备同步。</p>
+            </div>
+        </div>
+
+        <!-- 订阅转换工具 -->
+        <div class="convert-box">
+            <h3>🔄 订阅转换：让任意链接兼容 Clash</h3>
+            <p>部分机场仅提供 SS/SSR/V2Ray 原始链接，此时需要借助订阅转换工具生成 Clash 可用的配置。常用的公共转换服务（请自行搜索稳定性较好的后端）接受原始订阅 URL 并输出 Clash 格式。</p>
+            <p style="margin-top: 0.8rem;">典型用法：<code>https://转换后端地址?target=clash&url=你的原始订阅链接</code></p>
+            <div class="tip" style="margin-top:1rem;">
+                ⚠️ <strong>隐私提醒：</strong> 使用第三方转换服务时，你的订阅链接可能会被服务端记录。建议使用自建转换后端或信任的服务。
+            </div>
+        </div>
+
+        <!-- 管理订阅与自动更新 -->
+        <h2 style="font-size: 2rem; margin: 2.5rem 0 1.5rem; color: var(--brand-dark); border-left: 5px solid var(--brand-blue); padding-left: 1rem;">⏳ 订阅管理技巧</h2>
+        <div class="method-grid">
+            <div class="method-card">
+                <h3>🔄 自动更新订阅</h3>
+                <p>在配置列表中，右键点击某个订阅配置，选择“编辑”，在“更新间隔”中输入时间（单位：分钟）。例如设置 <code>1440</code> 表示每天自动更新一次。更新后节点会自动同步。</p>
+            </div>
+            <div class="method-card">
+                <h3>📂 多订阅共存</h3>
+                <p>你可以导入多个订阅配置（例如不同机场或不同策略组），在“配置”页面随时切换。适合同时拥有多个服务提供商的用户。</p>
+            </div>
+            <div class="method-card">
+                <h3>💾 手动强制更新</h3>
+                <p>如果感觉节点延迟变高或部分节点失效，可以右键点击配置选择“更新”立即拉取最新节点列表，无需重新导入。</p>
+            </div>
+        </div>
+
+        <!-- 安全警告 -->
+        <div class="info-banner">
+            <strong>🔒 安全警示：</strong> 订阅链接是你个人专用凭证，请勿分享给他人或在不受信任的设备上使用。建议定期更换订阅密码，防止流量盗用。
+        </div>
+
+        <!-- 常见问题 -->
+        <h2 style="font-size: 2rem; margin: 2rem 0 1rem; color: var(--brand-dark);">❓ 导入订阅常见问题</h2>
+        <div class="faq-grid">
+            <div class="faq-item">
+                <h4>为什么导入后没有节点？</h4>
+                <p>请检查订阅链接是否有效，尝试在浏览器中打开该链接看是否返回 YAML 内容。部分机场需要后端转换或添加参数。</p>
+            </div>
+            <div class="faq-item">
+                <h4>订阅链接提示“无效”怎么办？</h4>
+                <p>确认链接以 <code>http://</code> 或 <code>https://</code> 开头，且没有多余空格。如果链接由机场提供但无法使用，联系机场客服获取 Clash 专用订阅地址。</p>
+            </div>
+            <div class="faq-item">
+                <h4>更新订阅后节点丢失？</h4>
+                <p>可能是机场的配置格式发生了变化。可尝试删除配置后重新导入，或检查机场公告。</p>
+            </div>
+            <div class="faq-item">
+                <h4>能否导入多个订阅？</h4>
+                <p>完全可以。每个订阅会作为一个独立的配置出现在列表中，你可以根据需要随时切换。</p>
+            </div>
+        </div>
+
+        <!-- 下一步引导 -->
+        <div style="text-align: center; margin: 3rem 0 2rem;">
+            <p style="font-size: 1.1rem; color: #475569;">✅ 导入成功后，别忘了继续配置分流规则和 DNS 优化，让网络体验更顺畅。</p>
+            <a href="configuration.html" style="display: inline-block; margin-top: 1rem; background: var(--brand-blue); color: #fff; padding: 0.8rem 2rem; border-radius: 6px; text-decoration: none; font-weight: 600;">前往配置教程 →</a>
+        </div>
+    </main>
+
+    <footer>
+        <div class="main-wrapper">
+            <p>&copy; 2026 Clash Verge Rev 官网下载中心. 所有技术内容基于社区公开文档，仅供学习与测试。请遵守当地法律法规。</p>
+        </div>
+    </footer>
+
+</body>
+</html>
