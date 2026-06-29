@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+# 指定站点地图位置
+Sitemap: https://classhvverge.org/sitemap.xml
+
+# 爬取延迟（可选，一般不需要）
+Crawl-delay: 0
