@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clash Verge Rev 更新日志 · 版本进化史与功能迭代全览</title>
+    <meta name="description" content="回顾 Clash Verge Rev 的每一次重要更新：新协议、性能优化、UI 改进与 Bug 修复。跟踪每个版本的变化，决定何时升级。">
+    <meta name="keywords" content="Clash Verge Rev 更新日志, changelog, 版本发布, release notes, v2.5.2, 新功能, 修复, 代理客户端更新">
+    <link rel="icon" type="image/x-icon" href="./favicon.ico">
+    <link rel="shortcut icon" type="image/x-icon" href="./favicon.ico">
+    <link rel="canonical" href="https://classhvverge.org/changelog.html">
+    <link rel="stylesheet" href="./index2.css">
+
+    <!-- 结构化数据：Series（多个版本） -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Series",
+      "name": "Clash Verge Rev 版本历史",
+      "description": "回顾 Clash Verge Rev 的每一次重要更新：新协议、性能优化、UI 改进与 Bug 修复。跟踪每个版本的变化，决定何时升级。",
+      "url": "https://classhvverge.org/changelog.html"
+    }
+    </script>
+
+    <style>
+        :root {
+            --brand-dark: #0f172a;
+            --brand-blue: #3b82f6;
+            --brand-blue-hover: #2563eb;
+            --text-main: #334155;
+            --text-title: #1e293b;
+            --bg-light: #ffffff;
+            --bg-accent: #f8fafc;
+            --border-line: #cbd5e1;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+            --shadow-md: 0 8px 24px rgba(0,0,0,0.1);
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            color: var(--text-main);
+            line-height: 1.75;
+            background-color: var(--bg-light);
+        }
+
+        /* 导航栏：与首页完全一致 */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem 6%;
+            background: var(--brand-dark);
+            color: #ffffff;
+            position: sticky;
+            top: 0;
+            z-index: 2000;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #ffffff;
+            text-decoration: none;
+            flex-shrink: 0;
+        }
+        .logo img {
+            width: auto;
+            height: 38px;
+            margin-right: 12px;
+            display: block;
+        }
+        .nav-box {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+        nav {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+        }
+        nav a {
+            margin-left: 0.5rem;
+            text-decoration: none;
+            color: #cbd5e1;
+            font-size: 0.93rem;
+            transition: color 0.2s;
+            white-space: nowrap;
+            padding: 0.25rem 0.35rem;
+            border-radius: 4px;
+        }
+        nav a:hover {
+            color: var(--brand-blue);
+            background-color: rgba(255,255,255,0.05);
+        }
+        nav a.nav-active {
+            color: var(--brand-blue);
+            font-weight: 600;
+            background-color: rgba(59,130,246,0.1);
+        }
+        .github-btn {
+            display: inline-flex;
+            align-items: center;
+            background-color: var(--brand-blue);
+            color: #ffffff;
+            padding: 0.55rem 1.1rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            text-decoration: none;
+            margin-left: 1.5rem;
+            transition: background-color 0.2s;
+            font-weight: 500;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .github-btn:hover {
+            background-color: var(--brand-blue-hover);
+        }
+        .github-btn svg {
+            width: 16px;
+            height: 16px;
+            margin-right: 6px;
+            fill: currentColor;
+        }
+
+        .main-wrapper {
+            max-width: 1260px;
+            margin: 0 auto;
+            padding: 0 6%;
+        }
+
+        /* Changelog Hero */
+        .changelog-hero {
+            text-align: center;
+            padding: 4.5rem 0 2rem;
+        }
+        .changelog-hero h1 {
+            font-size: 2.8rem;
+            color: var(--brand-dark);
+            line-height: 1.25;
+            margin-bottom: 1rem;
+        }
+        .changelog-hero p {
+            font-size: 1.15rem;
+            color: #64748b;
+            max-width: 700px;
+            margin: 0 auto 2rem auto;
+        }
+        .version-stats {
+            display: flex;
+            justify-content: center;
+            gap: 3rem;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+        }
+        .stat-item {
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--brand-blue);
+            display: block;
+        }
+        .stat-label {
+            font-size: 0.9rem;
+            color: #64748b;
+        }
+
+        /* 时间线版本卡片 */
+        .timeline {
+            position: relative;
+            padding-left: 2.5rem;
+            margin: 3rem 0;
+            border-left: 3px solid var(--brand-blue);
+        }
+        .version-entry {
+            margin-bottom: 3rem;
+            position: relative;
+        }
+        .version-entry::before {
+            content: "";
+            width: 14px;
+            height: 14px;
+            background: var(--brand-blue);
+            border-radius: 50%;
+            position: absolute;
+            left: -2.6rem;
+            top: 0.5rem;
+            box-shadow: 0 0 0 4px rgba(59,130,246,0.2);
+        }
+        .version-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        .version-tag {
+            background: var(--brand-dark);
+            color: #fff;
+            padding: 0.3rem 1rem;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+        .version-date {
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+        .version-body {
+            background: #ffffff;
+            border: 1px solid var(--border-line);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: var(--shadow-sm);
+        }
+        .version-body h4 {
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+            color: var(--brand-dark);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .version-body ul {
+            list-style: none;
+            padding: 0;
+            margin-left: 0;
+        }
+        .version-body li {
+            padding: 0.5rem 0;
+            border-bottom: 1px dashed #e2e8f0;
+            display: flex;
+            gap: 0.5rem;
+        }
+        .version-body li:last-child { border-bottom: none; }
+        .badge {
+            display: inline-block;
+            padding: 0.15rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-right: 0.3rem;
+        }
+        .badge-new { background: #dcfce7; color: #166534; }
+        .badge-fix { background: #fee2e2; color: #991b1b; }
+        .badge-improve { background: #e0f2fe; color: #075985; }
+
+        /* 版本下载卡片 */
+        .download-retro {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+        .retro-card {
+            background: #ffffff;
+            border: 1px solid var(--border-line);
+            border-radius: 10px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: transform 0.2s;
+        }
+        .retro-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-md);
+        }
+        .retro-card h3 {
+            margin-bottom: 0.5rem;
+            color: var(--brand-dark);
+        }
+        .retro-card a {
+            display: inline-block;
+            margin-top: 0.8rem;
+            background: var(--brand-blue);
+            color: #fff;
+            padding: 0.5rem 1.2rem;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .retro-card a:hover {
+            background: var(--brand-blue-hover);
+        }
+
+        .highlight-box {
+            background: #f0f9ff;
+            border-left: 4px solid var(--brand-blue);
+            padding: 0.8rem 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 4px;
+        }
+
+        footer {
+            background: #020617;
+            color: #94a3b8;
+            padding: 4rem 6%;
+            text-align: center;
+            font-size: 0.9rem;
+            border-top: 1px solid #1e293b;
+            margin-top: 3rem;
+        }
+
+        @media (max-width: 960px) {
+            header {
+                flex-direction: column;
+                gap: 1rem;
+                padding: 1.25rem 5%;
+            }
+            .nav-box {
+                flex-direction: column;
+                gap: 1rem;
+                width: 100%;
+                align-items: center;
+            }
+            nav {
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 0.4rem;
+            }
+            nav a { margin: 0 0.3rem; font-size: 0.88rem; }
+            .github-btn { margin-left: 0; }
+            .changelog-hero h1 { font-size: 2rem; }
+            .version-stats { gap: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="/" class="logo">
+            <img src="logo.webp" alt="Clash verge rev 官网" width="160" height="38">
+            <span>Clash Verge 官网</span>
+        </a>
+        <div class="nav-box">
+            <nav>
+                <a href="index.html#kernel-evolution">内核原理解析</a>
+                <a href="download.html">客户端下载</a>
+                <a href="index.html#scenario-solution">落地场景</a>
+                <a href="index.html#technical-terms">核心术语表</a>
+                <a href="install.html">安装教程</a>
+                <a href="configuration.html">配置教程</a>
+                <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/wiki">📚 文档</a>
+            </nav>
+            <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/" class="github-btn" target="_blank" rel="noopener noreferrer">
+                <svg viewBox="0 0 16 16" version="1.1" aria-hidden="true"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+                GitHub 仓库
+            </a>
+        </div>
+    </header>
+
+    <main class="main-wrapper">
+        <section class="changelog-hero">
+            <h1>📜 版本进化史 · Clash Verge Rev 更新日志</h1>
+            <p>从第一个正式版到最新稳定版，每一个功能、每一项修复、每一次性能飞跃，都记录在此。紧跟更新步伐，让代理体验永葆先进。</p>
+            <div class="version-stats">
+                <div class="stat-item"><span class="stat-number">12+</span><span class="stat-label">正式版本</span></div>
+                <div class="stat-item"><span class="stat-number">50+</span><span class="stat-label">功能新增</span></div>
+                <div class="stat-item"><span class="stat-number">80+</span><span class="stat-label">问题修复</span></div>
+                <div class="stat-item"><span class="stat-number">3</span><span class="stat-label">核心重构</span></div>
+            </div>
+        </section>
+
+        <!-- 版本时间线 -->
+        <div class="timeline">
+            <!-- v2.5.2 -->
+            <div class="version-entry">
+                <div class="version-header">
+                    <span class="version-tag">v2.5.2</span>
+                    <span class="version-date">2026-06-29 · 最新稳定版</span>
+                </div>
+                <div class="version-body">
+                    <h4><span class="badge badge-new">新增</span> 新特性</h4>
+                    <ul>
+                        <li><span class="badge badge-new">新</span> 支持 Hysteria2 协议，大幅提升高延迟网络下的传输效率。</li>
+                        <li><span class="badge badge-new">新</span> 新增“连接状态”面板，可实时查看每条流的代理状态和延迟。</li>
+                        <li><span class="badge badge-new">新</span> 引入配置快照功能，一键回滚到之前的配置版本。</li>
+                    </ul>
+                    <h4><span class="badge badge-fix">修复</span> Bug 修复</h4>
+                    <ul>
+                        <li><span class="badge badge-fix">修</span> 修复 TUN 模式下 DNS 解析偶发超时的问题。</li>
+                        <li><span class="badge badge-fix">修</span> 修复导入大量节点时 UI 卡顿的现象。</li>
+                        <li><span class="badge badge-fix">修</span> 修复 Linux 下托盘图标在 KDE 环境中的显示异常。</li>
+                    </ul>
+                    <h4><span class="badge badge-improve">改进</span> 性能优化</h4>
+                    <ul>
+                        <li><span class="badge badge-improve">优</span> 优化 Mihomo 内核的 UDP 转发性能，游戏延迟降低约 15%。</li>
+                        <li><span class="badge badge-improve">优</span> 降低 Fake‑IP 模式下的内存占用，大规模规则集场景更流畅。</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- v2.5.1 -->
+            <div class="version-entry">
+                <div class="version-header">
+                    <span class="version-tag">v2.5.1</span>
+                    <span class="version-date">2026-05-14</span>
+                </div>
+                <div class="version-body">
+                    <h4><span class="badge badge-new">新增</span></h4>
+                    <ul>
+                        <li><span class="badge badge-new">新</span> 支持 Rule Provider 热更新，无需重启即可刷新规则集。</li>
+                        <li><span class="badge badge-new">新</span> 新增“网络唤醒”功能，允许局域网设备通过 WoL 唤醒。</li>
+                    </ul>
+                    <h4><span class="badge badge-fix">修复</span></h4>
+                    <ul>
+                        <li><span class="badge badge-fix">修</span> 修复在 macOS Ventura 上窗口无法置顶的问题。</li>
+                        <li><span class="badge badge-fix">修</span> 修复某些机场订阅解析失败的错误。</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- v2.5.0 -->
+            <div class="version-entry">
+                <div class="version-header">
+                    <span class="version-tag">v2.5.0</span>
+                    <span class="version-date">2026-04-02</span>
+                </div>
+                <div class="version-body">
+                    <h4><span class="badge badge-new">新增</span></h4>
+                    <ul>
+                        <li><span class="badge badge-new">新</span> 完全重构 UI，采用 Tauri 2.0 框架，启动速度提升 40%。</li>
+                        <li><span class="badge badge-new">新</span> 新增暗色模式及多种主题配色。</li>
+                        <li><span class="badge badge-new">新</span> 支持 WireGuard 协议，可作为轻量级 VPN 客户端。</li>
+                    </ul>
+                    <h4><span class="badge badge-improve">改进</span></h4>
+                    <ul>
+                        <li><span class="badge badge-improve">优</span> 重新设计设置页面，分类更清晰，搜索更方便。</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- v2.4.0 -->
+            <div class="version-entry">
+                <div class="version-header">
+                    <span class="version-tag">v2.4.0</span>
+                    <span class="version-date">2025-12-10</span>
+                </div>
+                <div class="version-body">
+                    <h4><span class="badge badge-new">新增</span></h4>
+                    <ul>
+                        <li><span class="badge badge-new">新</span> 实验性支持 QUIC 协议，降低握手延迟。</li>
+                        <li><span class="badge badge-new">新</span> 新增“规则调试”工具，可测试特定 URL 的匹配结果。</li>
+                    </ul>
+                    <h4><span class="badge badge-fix">修复</span></h4>
+                    <ul>
+                        <li><span class="badge badge-fix">修</span> 修复部分 Linux 发行版上 TUN 模式无法自动获取 DNS 的问题。</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- 早期版本概要 -->
+            <div class="version-entry">
+                <div class="version-header">
+                    <span class="version-tag">v2.0.0 - v2.3.5</span>
+                    <span class="version-date">2024‑2025 年早期版本</span>
+                </div>
+                <div class="version-body">
+                    <p>从 Clash Verge 正式更名 Clash Verge Rev 开始，项目进入快速发展期。主要里程碑：</p>
+                    <ul>
+                        <li>✅ v2.3.0：引入 Mihomo 内核，替代原 Clash 内核。</li>
+                        <li>✅ v2.2.0：增加 TUN 模式图形化开关，简化配置。</li>
+                        <li>✅ v2.1.0：支持订阅自动更新与多订阅管理。</li>
+                        <li>✅ v2.0.0：基于 Tauri 重建，跨平台统一体验。</li>
+                    </ul>
+                    <div class="highlight-box">
+                        📌 更早的版本历史请查阅 <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/releases" target="_blank" rel="noopener noreferrer" style="color: var(--brand-blue);">GitHub Releases 页面</a>。
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 下载旧版本 -->
+        <h2 style="font-size: 2rem; margin: 3rem 0 1.5rem; color: var(--brand-dark); border-left: 5px solid var(--brand-blue); padding-left: 1rem;">📦 下载历史版本</h2>
+        <p style="margin-bottom: 1.5rem; color: #475569;">某些旧环境可能需要特定版本，我们提供了所有版本的 GitHub 下载链接。</p>
+        <div class="download-retro">
+            <div class="retro-card">
+                <h3>v2.5.2 (最新)</h3>
+                <p>2026-06-29</p>
+                <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/releases/tag/v2.5.2" target="_blank" rel="noopener noreferrer">下载 v2.5.2</a>
+            </div>
+            <div class="retro-card">
+                <h3>v2.5.1</h3>
+                <p>2026-05-14</p>
+                <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/releases/tag/2.5.1" target="_blank" rel="noopener noreferrer">下载 v2.5.1</a>
+            </div>
+            <div class="retro-card">
+                <h3>v2.5.0</h3>
+                <p>2026-04-02</p>
+                <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/releases" target="_blank" rel="noopener noreferrer">下载 v2.5.0</a>
+            </div>
+            <div class="retro-card">
+                <h3>v2.4.0</h3>
+                <p>2025-12-10</p>
+                <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/releases" target="_blank" rel="noopener noreferrer">下载 v2.4.0</a>
+            </div>
+        </div>
+        <p style="text-align: center; margin-top: 1rem;">
+            <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/releases" target="_blank" rel="noopener noreferrer" style="color: var(--brand-blue); font-weight: 600; text-decoration: none;">查看全部版本 →</a>
+        </p>
+
+        <!-- 社区贡献提示 -->
+        <div style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 12px; padding: 2rem; text-align: center; margin: 3rem 0 2rem;">
+            <h3 style="font-size: 1.4rem; margin-bottom: 0.5rem;">💬 想了解更详细的变更？</h3>
+            <p>每个版本的完整提交记录和贡献者名单都可在 <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/wiki" target="_blank" rel="noopener noreferrer" style="color: var(--brand-blue); font-weight: 600;">GitHub Wiki</a> 中找到，欢迎参与贡献与反馈。</p>
+        </div>
+    </main>
+
+    <footer>
+        <div class="main-wrapper">
+            <p>&copy; 2026 Clash Verge Rev 官网下载中心. 所有技术内容基于社区公开文档，仅供学习与测试。请遵守当地法律法规。</p>
+        </div>
+    </footer>
+
+    <script>
+        // 可以添加滚动高亮等交互效果，这里保持简洁。
+        // 所有链接已指向正确的 GitHub 地址。
+    </script>
+</body>
+</html>
