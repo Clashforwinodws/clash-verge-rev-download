@@ -95,4 +95,53 @@
         <changefreq>weekly</changefreq>
         <priority>0.6</priority>
     </url>
+
+        <url>
+        <loc>https://classhvverge.org/articles/</loc>
+        <lastmod>2026-07-08</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.6</priority>
+    </url>
+
+            <url>
+        <loc>https://classhvverge.org/articles/dns-leak-tools.html</loc>
+        <lastmod>2026-07-08</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.6</priority>
+    </url>
+
+            <url>
+        <loc>https://classhvverge.org/articles/fake-ip-deep-dive.html</loc>
+        <lastmod>2026-07-08</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.6</priority>
+    </url>
+
+            <url>
+        <loc>https://classhvverge.org/articles/rule-provider-guide.html</loc>
+        <lastmod>2026-07-08</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.6</priority>
+    </url>
+
+            <url>
+        <loc>https://classhvverge.org/articles/tun-no-internet-fix.html</loc>
+        <lastmod>2026-07-08</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.6</priority>
+    </url>
+
+                <url>
+        <loc>https://classhvverge.org/articles/ubuntu-clash-verge-setup.html</loc>
+        <lastmod>2026-07-08</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.6</priority>
+    </url>
+
+                <url>
+        <loc>https://classhvverge.org/articles/v2.5.2-highlights.html</loc>
+        <lastmod>2026-07-08</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.6</priority>
+    </url>
 </urlset>
