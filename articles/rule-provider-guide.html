@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用 Rule Provider 管理万条规则 · Clash Verge Rev 配置进阶</title>
+    <meta name="description" content="告别臃肿的主配置文件！详解 Clash Verge Rev 的 Rule Provider 功能，手把手教你用远程规则集实现自动化更新与极致清爽的配置管理。">
+    <meta name="keywords" content="Rule Provider, 规则集, Clash Verge Rev 规则, 远程规则, 分流配置, 规则管理, clash 规则提供者">
+    <link rel="icon" type="image/x-icon" href="../favicon.ico">
+    <link rel="shortcut icon" type="image/x-icon" href="../favicon.ico">
+    <link rel="canonical" href="https://classhvverge.org/articles/rule-provider-guide.html">
+    <link rel="stylesheet" href="../index2.css">
+    <!-- 结构化数据：TechArticle -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "TechArticle",
+      "headline": "用 Rule Provider 管理万条规则，配置清爽100倍",
+      "description": "告别臃肿的主配置文件！详解 Clash Verge Rev 的 Rule Provider 功能，手把手教你用远程规则集实现自动化更新与极致清爽的配置管理。",
+      "author": { "@type": "Organization", "name": "Clash Verge Rev 社区" },
+      "datePublished": "2026-07-08",
+      "dateModified": "2026-07-08",
+      "mainEntityOfPage": { "@type": "WebPage", "@id": "https://classhvverge.org/articles/rule-provider-guide.html" }
+    }
+    </script>
+    <style>
+        :root {
+            --brand-dark: #0f172a;
+            --brand-blue: #3b82f6;
+            --brand-blue-hover: #2563eb;
+            --text-main: #334155;
+            --text-title: #1e293b;
+            --bg-light: #ffffff;
+            --bg-accent: #f8fafc;
+            --border-line: #cbd5e1;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+            --shadow-md: 0 8px 24px rgba(0,0,0,0.1);
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            color: var(--text-main);
+            line-height: 1.75;
+            background-color: var(--bg-light);
+        }
+
+        /* 导航栏（简化版） */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem 6%;
+            background: var(--brand-dark);
+            color: #ffffff;
+            position: sticky;
+            top: 0;
+            z-index: 2000;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #ffffff;
+            text-decoration: none;
+            flex-shrink: 0;
+        }
+        .logo img {
+            width: auto;
+            height: 38px;
+            margin-right: 12px;
+            display: block;
+        }
+        .nav-box {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+        nav {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+        }
+        nav a {
+            margin-left: 0.5rem;
+            text-decoration: none;
+            color: #cbd5e1;
+            font-size: 0.93rem;
+            transition: color 0.2s;
+            white-space: nowrap;
+            padding: 0.25rem 0.35rem;
+            border-radius: 4px;
+        }
+        nav a:hover {
+            color: var(--brand-blue);
+            background-color: rgba(255,255,255,0.05);
+        }
+        nav a.nav-active {
+            color: var(--brand-blue);
+            font-weight: 600;
+            background-color: rgba(59,130,246,0.1);
+        }
+        .github-btn {
+            display: inline-flex;
+            align-items: center;
+            background-color: var(--brand-blue);
+            color: #ffffff;
+            padding: 0.55rem 1.1rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            text-decoration: none;
+            margin-left: 1.5rem;
+            transition: background-color 0.2s;
+            font-weight: 500;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .github-btn:hover {
+            background-color: var(--brand-blue-hover);
+        }
+        .github-btn svg {
+            width: 16px;
+            height: 16px;
+            margin-right: 6px;
+            fill: currentColor;
+        }
+
+        /* 文章容器 */
+        .article-wrapper {
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 3rem 6%;
+        }
+        .article-header {
+            text-align: center;
+            padding: 3rem 0 2rem;
+        }
+        .article-header h1 {
+            font-size: 2.5rem;
+            color: var(--brand-dark);
+            margin-bottom: 1rem;
+            line-height: 1.3;
+        }
+        .article-meta {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            color: #64748b;
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+        }
+        .article-meta span {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .featured-image {
+            width: 100%;
+            height: 360px;
+            background: #f1f5f9;
+            border: 2px dashed #94a3b8;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+            font-size: 0.95rem;
+            margin-bottom: 2.5rem;
+        }
+
+        /* 内容样式 */
+        .article-content h2 {
+            font-size: 1.9rem;
+            color: var(--brand-dark);
+            margin: 2.5rem 0 1rem;
+            border-left: 5px solid var(--brand-blue);
+            padding-left: 1rem;
+        }
+        .article-content h3 {
+            font-size: 1.5rem;
+            color: var(--text-title);
+            margin: 2rem 0 0.8rem;
+        }
+        .article-content p {
+            margin-bottom: 1.2rem;
+            font-size: 1.05rem;
+            color: #334155;
+        }
+        .code-block {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 1.5rem;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            margin: 1.5rem 0;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        .code-block .key { color: #93c5fd; }
+        .code-block .value { color: #fbbf24; }
+        .code-block .comment { color: #94a3b8; }
+
+        .tip-box {
+            background: #f0f9ff;
+            border-left: 5px solid var(--brand-blue);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+        }
+        .tip-box strong { color: #0f172a; }
+        .info-box {
+            background: #fff7ed;
+            border-left: 5px solid #f97316;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+        }
+        .info-box strong { color: #7c2d12; }
+
+        /* 内链列表 */
+        .related-links {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+        .related-link-card {
+            background: #ffffff;
+            border: 1px solid var(--border-line);
+            border-radius: 10px;
+            padding: 1.2rem;
+            text-decoration: none;
+            color: var(--text-main);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .related-link-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-md);
+        }
+        .related-link-card h4 {
+            font-size: 1.1rem;
+            color: var(--brand-dark);
+            margin-bottom: 0.3rem;
+        }
+        .related-link-card p {
+            font-size: 0.85rem;
+            color: #64748b;
+        }
+
+        /* 目录导航 */
+        .table-of-contents {
+            background: #f8fafc;
+            border: 1px solid var(--border-line);
+            border-radius: 10px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 2rem;
+        }
+        .table-of-contents h3 {
+            margin-bottom: 0.8rem;
+            font-size: 1.2rem;
+            color: var(--brand-dark);
+        }
+        .table-of-contents ul {
+            list-style: none;
+            columns: 2;
+            column-gap: 2rem;
+        }
+        .table-of-contents li {
+            margin-bottom: 0.4rem;
+        }
+        .table-of-contents a {
+            color: var(--brand-blue);
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .table-of-contents a:hover {
+            text-decoration: underline;
+        }
+
+        footer {
+            background: #020617;
+            color: #94a3b8;
+            padding: 4rem 6%;
+            text-align: center;
+            font-size: 0.9rem;
+            border-top: 1px solid #1e293b;
+            margin-top: 3rem;
+        }
+
+        @media (max-width: 768px) {
+            header {
+                flex-direction: column;
+                gap: 1rem;
+                padding: 1.25rem 5%;
+            }
+            .nav-box {
+                flex-direction: column;
+                gap: 1rem;
+                width: 100%;
+                align-items: center;
+            }
+            nav {
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 0.4rem;
+            }
+            nav a { margin: 0 0.3rem; font-size: 0.88rem; }
+            .github-btn { margin-left: 0; }
+            .article-header h1 { font-size: 1.9rem; }
+            .table-of-contents ul { columns: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="../index.html" class="logo">
+            <img src="../logo.webp" alt="Clash verge rev 官网" width="160" height="38">
+            <span>Clash Verge 官网</span>
+        </a>
+        <div class="nav-box">
+            <nav>
+                <a href="../download.html">客户端下载</a>
+                <a href="../install.html">安装教程</a>
+                <a href="../configuration.html">配置教程</a>
+                <a href="../faq.html">常见问题</a>
+                <a href="../changelog.html">更新日志</a>
+                <a href="index.html" class="nav-active">文章中心</a>
+                <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/wiki">📚 文档</a>
+            </nav>
+            <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/" class="github-btn" target="_blank" rel="noopener noreferrer">
+                <svg viewBox="0 0 16 16" version="1.1" aria-hidden="true"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+                GitHub 仓库
+            </a>
+        </div>
+    </header>
+
+    <main class="article-wrapper">
+        <article>
+            <div class="article-header">
+                <h1>用 Rule Provider 管理万条规则，配置清爽100倍</h1>
+                <div class="article-meta">
+                    <span>📅 2026-07-08</span>
+                    <span>🏷️ 配置技巧</span>
+                    <span>⏱️ 阅读约 8 分钟</span>
+                </div>
+            </div>
+
+            <div class="featured-image">
+                [ Rule Provider 概念示意图 ]
+            </div>
+
+            <!-- 文章目录 -->
+            <div class="table-of-contents">
+                <h3>📑 本文目录</h3>
+                <ul>
+                    <li><a href="#intro">1. 为什么需要 Rule Provider？</a></li>
+                    <li><a href="#what">2. 什么是 Rule Provider</a></li>
+                    <li><a href="#setup">3. 快速配置指南</a></li>
+                    <li><a href="#example">4. 实战案例：国内外分流</a></li>
+                    <li><a href="#advanced">5. 进阶技巧与最佳实践</a></li>
+                    <li><a href="#troubleshoot">6. 常见问题排查</a></li>
+                    <li><a href="#summary">7. 总结</a></li>
+                </ul>
+            </div>
+
+            <div class="article-content">
+                <!-- 1. 为什么需要 -->
+                <h2 id="intro">📌 为什么需要 Rule Provider？</h2>
+                <p>如果你曾经维护过 Clash 配置文件，一定对冗长的 <code>rules</code> 字段印象深刻。数百条 <code>DOMAIN-SUFFIX</code>、<code>GEOIP</code> 规则堆砌在主配置里，不仅让文件臃肿不堪，更新时更是噩梦：每次规则变动都需要手动编辑庞大的 YAML 文件，稍有不慎就会导致缩进错误，让整个代理系统瘫痪。</p>
+                <p>Rule Provider 的出现彻底改变了这一局面。它允许你将分流规则托管在远程 URL 或本地独立文件中，Clash Verge Rev 启动时自动拉取并合并这些规则集。这样一来，主配置文件只需要关注节点信息和策略组，规则部分变得极度精简。更棒的是，规则集可以独立更新，你甚至无需重启客户端就能获得最新的分流策略——这正是<a href="../configuration.html" target="_blank">配置教程</a>中强烈推荐的进阶用法。</p>
+                <div class="tip-box">
+                    <strong>💡 核心优势：</strong>主配置瘦身、规则集独立维护、社区规则一键引用、自动更新无感知。如果你还在手动复制粘贴规则，读完本文你会有全新的认识。
+                </div>
+
+                <!-- 2. 什么是 Rule Provider -->
+                <h2 id="what">🧩 什么是 Rule Provider</h2>
+                <p>Rule Provider 是 Mihomo 内核（Clash Meta）提供的一种规则加载机制。它本质上是一个指向外部规则文件的引用，支持两种来源：</p>
+                <ul style="margin-bottom: 1.5rem; padding-left: 1.5rem;">
+                    <li><strong>HTTP(S) 远程加载</strong>：规则文件托管在 GitHub、CDN 或你的私人服务器上，Clash 定期检查更新。</li>
+                    <li><strong>本地文件</strong>：直接读取本地磁盘上的 <code>.yaml</code> 或 <code>.txt</code> 规则文件。</li>
+                </ul>
+                <p>一个典型的 Rule Provider 定义如下：</p>
+                <div class="code-block">
+<span class="key">rule-providers:</span>
+  <span class="key">my_custom_rules:</span>
+    <span class="key">type:</span> <span class="value">http</span>
+    <span class="key">url:</span> <span class="value">"https://example.com/clash/rules.yaml"</span>
+    <span class="key">path:</span> <span class="value">./rules/custom.yaml</span>
+    <span class="key">interval:</span> <span class="value">86400</span>   <span class="comment"># 每天更新一次</span>
+                </div>
+                <p>定义好后，在规则列表中通过 <code>RULE-SET</code> 指令引用，就像调用一个函数一样。这极大提升了配置文件的可维护性，也与 Clash Verge Rev 的 <a href="../rule.html" target="_blank">Rule 模式</a> 完美契合。</p>
+
+                <!-- 3. 快速配置指南 -->
+                <h2 id="setup">🛠️ 快速配置指南</h2>
+                <h3>步骤一：选择合适的规则源</h3>
+                <p>社区有许多维护良好的规则集项目，例如 <strong>Loyalsoldier/clash-rules</strong>、<strong>ACL4SSR/ACL4SSR</strong> 等。这些项目将规则分类整理为 <code>cn.yaml</code>（国内直连）、<code>global.yaml</code>（全球代理）、<code>ads.yaml</code>（广告拦截）等多个文件，只需找到对应的 Raw 链接即可。当然，你也可以根据自己的需求定制规则文件。</p>
+
+                <h3>步骤二：在配置文件中定义 Rule Provider</h3>
+                <p>打开你的 Clash Verge Rev 配置文件（或直接在“配置”页面编辑），在顶层添加 <code>rule-providers</code> 字段：</p>
+                <div class="code-block">
+<span class="key">rule-providers:</span>
+  <span class="key">cn_domains:</span>
+    <span class="key">type:</span> <span class="value">http</span>
+    <span class="key">url:</span> <span class="value">"https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/cn.yaml"</span>
+    <span class="key">path:</span> <span class="value">./rules/cn.yaml</span>
+    <span class="key">interval:</span> <span class="value">86400</span>
+  <span class="key">global_domains:</span>
+    <span class="key">type:</span> <span class="value">http</span>
+    <span class="key">url:</span> <span class="value">"https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/proxy.yaml"</span>
+    <span class="key">path:</span> <span class="value">./rules/proxy.yaml</span>
+    <span class="key">interval:</span> <span class="value">86400</span>
+                </div>
+                <div class="info-box">
+                    <strong>⚠️ 注意：</strong> 如果你是国内网络环境，GitHub 直连可能失败。建议使用 jsDelivr 等 CDN 加速链接，或者将规则文件托管在可访问的私有服务器上。
+                </div>
+
+                <h3>步骤三：在规则列表中引用</h3>
+                <p>在 <code>rules</code> 字段中，用 <code>RULE-SET</code> 指令替代原来冗长的规则列表：</p>
+                <div class="code-block">
+<span class="key">rules:</span>
+  - <span class="value">RULE-SET,cn_domains,DIRECT</span>
+  - <span class="value">RULE-SET,global_domains,🚀 代理</span>
+  - <span class="value">GEOIP,,CN,DIRECT</span>
+  - <span class="value">MATCH,🚀 代理</span>
+                </div>
+                <p>保存配置后，Clash Verge Rev 会自动下载规则文件到本地 <code>rules</code> 目录，并根据你设置的间隔时间定期更新。从此，主配置文件从几千行锐减至几十行，清爽无比。</p>
+
+                <!-- 4. 实战案例 -->
+                <h2 id="example">🌐 实战案例：国内外流量智能分流</h2>
+                <p>下面是一个完整的 Rule Provider 实战配置，实现了国内网站直连、国外网站代理、广告域名屏蔽的功能。你可以直接复制到你的配置文件中使用。</p>
+                <div class="code-block">
+<span class="comment"># 1. 定义规则提供者</span>
+<span class="key">rule-providers:</span>
+  <span class="key">cn_domains:</span>
+    <span class="key">type:</span> <span class="value">http</span>
+    <span class="key">url:</span> <span class="value">"https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/cn.yaml"</span>
+    <span class="key">path:</span> <span class="value">./rules/cn.yaml</span>
+    <span class="key">interval:</span> <span class="value">86400</span>
+  <span class="key">proxy_domains:</span>
+    <span class="key">type:</span> <span class="value">http</span>
+    <span class="key">url:</span> <span class="value">"https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/proxy.yaml"</span>
+    <span class="key">path:</span> <span class="value">./rules/proxy.yaml</span>
+    <span class="key">interval:</span> <span class="value">86400</span>
+  <span class="key">ad_domains:</span>
+    <span class="key">type:</span> <span class="value">http</span>
+    <span class="key">url:</span> <span class="value">"https://cdn.jsdelivr.net/gh/privacy-protection-tools/anti-AD@master/anti-ad-clash.yaml"</span>
+    <span class="key">path:</span> <span class="value">./rules/ads.yaml</span>
+    <span class="key">interval:</span> <span class="value">86400</span>
+
+<span class="comment"># 2. 规则匹配（从上到下优先）</span>
+<span class="key">rules:</span>
+  - <span class="value">RULE-SET,ad_domains,REJECT</span>
+  - <span class="value">RULE-SET,cn_domains,DIRECT</span>
+  - <span class="value">RULE-SET,proxy_domains,🚀 自动选择</span>
+  - <span class="value">GEOIP,CN,DIRECT</span>
+  - <span class="value">MATCH,🚀 自动选择</span>
+                </div>
+                <p>该配置会优先拦截广告域名，然后将国内域名直连，国外域名走代理。最后用 <code>GEOIP</code> 作为补充，兜底规则保证没有遗漏。配合 <a href="../dns.html" target="_blank">DNS 优化</a> 和 <a href="../fake-ip.html" target="_blank">Fake‑IP 模式</a>，可以实现近乎完美的流量调度。</p>
+
+                <!-- 5. 进阶技巧 -->
+                <h2 id="advanced">🚀 进阶技巧与最佳实践</h2>
+                <h3>合并多个规则集</h3>
+                <p>你可以定义多个 Rule Provider，并在规则列表中按需组合。例如将广告规则、国内规则、流媒体规则分开维护，互不干扰。通过调整引用顺序，轻松控制匹配优先级。</p>
+
+                <h3>使用自建规则集</h3>
+                <p>如果你有特殊需求（例如内网域名、公司 VPN 路由），完全可以编写自己的 <code>my-rules.yaml</code>，放在 GitHub 私有仓库或本地服务器上。格式非常简单，每行一条规则：</p>
+                <div class="code-block">
+<span class="comment"># my-rules.yaml</span>
+<span class="value">DOMAIN-SUFFIX,office.local,DIRECT</span>
+<span class="value">IP-CIDR,10.0.0.0/8,DIRECT</span>
+<span class="value">DOMAIN-KEYWORD,vpn,🚀 代理</span>
+                </div>
+                <p>然后在 <code>rule-providers</code> 中指向该文件即可。这比直接写在主配置中更加模块化，也便于团队共享。</p>
+
+                <h3>监控规则更新状态</h3>
+                <p>在 Clash Verge Rev 的日志页面，你可以看到每个 Rule Provider 的更新状态。如果出现“下载失败”，检查 URL 是否可访问，或者切换到备用 CDN。部分用户喜欢将规则文件缓存在本地，以避免网络波动影响代理启动——只需将 <code>type</code> 改为 <code>file</code> 并指定本地路径即可。</p>
+
+                <!-- 6. 常见问题 -->
+                <h2 id="troubleshoot">❓ 常见问题排查</h2>
+                <p><strong>Q: Rule Provider 下载失败怎么办？</strong><br>
+                检查网络连通性，尝试在浏览器中打开规则文件 URL。如果 URL 被墙，替换为可访问的 CDN 地址。也可以下载规则文件到本地，改用 <code>type: file</code> 加载。</p>
+
+                <p><strong>Q: 修改规则后为什么没生效？</strong><br>
+                Rule Provider 会缓存规则文件到本地，默认每天更新一次。如需立即更新，可以删除缓存目录（通常为配置目录下的 <code>rules</code> 文件夹）并重启客户端，或者在图形界面中强制更新。</p>
+
+                <p><strong>Q: 规则集和主配置规则冲突怎么办？</strong><br>
+                记住 Clash 的规则匹配是从上到下的。通常将 <code>RULE-SET</code> 放在前面，特殊单条规则紧随其后。如果你的自定义规则需要优先，就把它放在 <code>RULE-SET</code> 之上。更多细节可参考 <a href="../rule.html" target="_blank">Rule 模式详解</a>。</p>
+
+                <!-- 7. 总结 -->
+                <h2 id="summary">📝 总结</h2>
+                <p>Rule Provider 是 Clash Verge Rev 进阶使用的必备技能。它不仅让你的配置文件清爽易读，更带来了规则集的自动化维护与社区生态的便利。一旦配置好，你就可以把精力集中在节点选择和策略调整上，而非繁琐的规则管理。</p>
+                <p>现在就去试试吧！打开你的 Clash Verge Rev，参照本文配置你的第一个 Rule Provider。如果遇到任何问题，欢迎参考 <a href="../faq.html" target="_blank">常见问题</a> 或访问 <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/wiki" target="_blank" rel="noopener">GitHub Wiki 文档</a>。</p>
+            </div>
+
+            <!-- 相关文章内链 -->
+            <h3 style="font-size: 1.5rem; margin: 2.5rem 0 1rem;">📖 继续阅读</h3>
+            <div class="related-links">
+                <a href="../configuration.html" class="related-link-card">
+                    <h4>📘 配置教程</h4>
+                    <p>从零开始配置 Clash Verge Rev</p>
+                </a>
+                <a href="../rule.html" class="related-link-card">
+                    <h4>📋 Rule 模式</h4>
+                    <p>规则分流与优先级全解</p>
+                </a>
+                <a href="../fake-ip.html" class="related-link-card">
+                    <h4>🎭 Fake‑IP 模式</h4>
+                    <p>彻底杜绝 DNS 泄漏</p>
+                </a>
+                <a href="fake-ip-deep-dive.html" class="related-link-card">
+                    <h4>🔒 零 DNS 泄漏详解</h4>
+                    <p>Fake‑IP 深度原理分析</p>
+                </a>
+                <a href="../dns.html" class="related-link-card">
+                    <h4>🌐 DNS 配置</h4>
+                    <p>加密 DNS 与防污染指南</p>
+                </a>
+                <a href="mihomo-plugin-dev.html" class="related-link-card">
+                    <h4>🧬 Mihomo 插件开发</h4>
+                    <p>自定义内核模块</p>
+                </a>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="main-wrapper">
+            <p>&copy; 2026 Clash Verge Rev 官网下载中心. 所有技术内容基于社区公开文档，仅供学习与测试。请遵守当地法律法规。</p>
+        </div>
+    </footer>
+
+</body>
+</html>
