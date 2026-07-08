@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文章中心 · Clash Verge Rev 教程与动态</title>
+    <meta name="description" content="Clash Verge Rev 技术文章合集：涵盖安装部署、高级配置、协议解析、内核原理、安全优化等深度教程，持续更新。">
+    <meta name="keywords" content="Clash Verge Rev 文章, 代理教程, 规则配置, Mihomo 内核, TUN 模式, DNS 优化, 订阅管理">
+    <link rel="icon" type="image/x-icon" href="../favicon.ico">
+    <link rel="shortcut icon" type="image/x-icon" href="../favicon.ico">
+    <link rel="canonical" href="https://classhvverge.org/articles/">
+    <link rel="stylesheet" href="../index2.css">
+    <!-- 结构化数据：ItemList 文章列表 -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "url": "https://classhvverge.org/articles/rule-provider-guide.html",
+          "name": "用 Rule Provider 管理万条规则，配置清爽100倍"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "url": "https://classhvverge.org/articles/fake-ip-deep-dive.html",
+          "name": "Clash Verge Rev 如何实现零 DNS 泄漏？一文看懂 Fake‑IP"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "url": "https://classhvverge.org/articles/v2.5.2-highlights.html",
+          "name": "v2.5.2 新特性：Hysteria2 协议支持与连接面板"
+        },
+        {
+          "@type": "ListItem",
+          "position": 4,
+          "url": "https://classhvverge.org/articles/tun-no-internet-fix.html",
+          "name": "TUN 模式断网？可能是 DNS 劫持冲突"
+        },
+        {
+          "@type": "ListItem",
+          "position": 5,
+          "url": "https://classhvverge.org/articles/dns-leak-tools.html",
+          "name": "5 款超好用的在线 DNS 检测工具"
+        },
+        {
+          "@type": "ListItem",
+          "position": 6,
+          "url": "https://classhvverge.org/articles/ubuntu-clash-verge-setup.html",
+          "name": "从零开始：Ubuntu 部署 Clash Verge Rev 实现全局透明代理"
+        }
+      ]
+    }
+    </script>
+    <style>
+        :root {
+            --brand-dark: #0f172a;
+            --brand-blue: #3b82f6;
+            --brand-blue-hover: #2563eb;
+            --text-main: #334155;
+            --text-title: #1e293b;
+            --bg-light: #ffffff;
+            --bg-accent: #f8fafc;
+            --border-line: #cbd5e1;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+            --shadow-md: 0 8px 24px rgba(0,0,0,0.1);
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            color: var(--text-main);
+            line-height: 1.75;
+            background-color: var(--bg-light);
+        }
+
+        /* 导航栏（与首页完全一致） */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem 6%;
+            background: var(--brand-dark);
+            color: #ffffff;
+            position: sticky;
+            top: 0;
+            z-index: 2000;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #ffffff;
+            text-decoration: none;
+            flex-shrink: 0;
+        }
+        .logo img {
+            width: auto;
+            height: 38px;
+            margin-right: 12px;
+            display: block;
+        }
+        .nav-box {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+        nav {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+        }
+        nav a {
+            margin-left: 0.5rem;
+            text-decoration: none;
+            color: #cbd5e1;
+            font-size: 0.93rem;
+            transition: color 0.2s;
+            white-space: nowrap;
+            padding: 0.25rem 0.35rem;
+            border-radius: 4px;
+        }
+        nav a:hover {
+            color: var(--brand-blue);
+            background-color: rgba(255,255,255,0.05);
+        }
+        nav a.nav-active {
+            color: var(--brand-blue);
+            font-weight: 600;
+            background-color: rgba(59,130,246,0.1);
+        }
+        .github-btn {
+            display: inline-flex;
+            align-items: center;
+            background-color: var(--brand-blue);
+            color: #ffffff;
+            padding: 0.55rem 1.1rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            text-decoration: none;
+            margin-left: 1.5rem;
+            transition: background-color 0.2s;
+            font-weight: 500;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .github-btn:hover {
+            background-color: var(--brand-blue-hover);
+        }
+        .github-btn svg {
+            width: 16px;
+            height: 16px;
+            margin-right: 6px;
+            fill: currentColor;
+        }
+
+        .main-wrapper {
+            max-width: 1260px;
+            margin: 0 auto;
+            padding: 0 6%;
+        }
+
+        /* 页面头部 */
+        .articles-hero {
+            text-align: center;
+            padding: 4rem 0 2rem;
+        }
+        .articles-hero h1 {
+            font-size: 2.8rem;
+            color: var(--brand-dark);
+            margin-bottom: 1rem;
+        }
+        .articles-hero p {
+            font-size: 1.15rem;
+            color: #64748b;
+            max-width: 700px;
+            margin: 0 auto 2rem auto;
+        }
+        .search-box {
+            max-width: 500px;
+            margin: 0 auto 2rem auto;
+            display: flex;
+            gap: 0.5rem;
+        }
+        .search-box input {
+            flex: 1;
+            padding: 0.8rem 1.2rem;
+            border: 2px solid var(--border-line);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--brand-blue);
+        }
+        .search-box button {
+            background: var(--brand-blue);
+            color: #fff;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+        .search-box button:hover {
+            background: var(--brand-blue-hover);
+        }
+
+        /* 编辑精选大卡片 */
+        .featured-section {
+            margin: 2rem 0 3rem;
+        }
+        .section-title {
+            font-size: 2rem;
+            color: var(--brand-dark);
+            margin-bottom: 1.5rem;
+            border-left: 5px solid var(--brand-blue);
+            padding-left: 1rem;
+        }
+        .featured-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+        .featured-card {
+            background: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border-line);
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            flex-direction: column;
+        }
+        .featured-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-md);
+        }
+        .featured-img {
+            height: 160px;
+            background: #f1f5f9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+        .featured-content {
+            padding: 1.5rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .featured-content .date {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-bottom: 0.5rem;
+        }
+        .featured-content h3 {
+            font-size: 1.25rem;
+            color: var(--brand-dark);
+            margin-bottom: 0.5rem;
+        }
+        .featured-content p {
+            font-size: 0.95rem;
+            color: #475569;
+            flex: 1;
+        }
+        .featured-content a {
+            align-self: flex-start;
+            margin-top: 1rem;
+            font-weight: 600;
+            color: var(--brand-blue);
+            text-decoration: none;
+        }
+        .featured-content a:hover {
+            text-decoration: underline;
+        }
+
+        /* 分类标签 */
+        .category-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin: 2rem 0 1.5rem;
+        }
+        .cat-tag {
+            padding: 0.5rem 1.2rem;
+            border: 1px solid var(--border-line);
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+            background: #fff;
+        }
+        .cat-tag.active {
+            background: var(--brand-blue);
+            color: #fff;
+            border-color: var(--brand-blue);
+        }
+        .cat-tag:hover {
+            background: #f1f5f9;
+        }
+        .cat-tag.active:hover {
+            background: var(--brand-blue-hover);
+        }
+
+        /* 文章列表 */
+        .article-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .article-item {
+            background: #fff;
+            border: 1px solid var(--border-line);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            flex-direction: column;
+        }
+        .article-item:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-md);
+        }
+        .article-item .meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-bottom: 0.75rem;
+        }
+        .article-item h3 {
+            font-size: 1.2rem;
+            color: var(--brand-dark);
+            margin-bottom: 0.5rem;
+        }
+        .article-item p {
+            font-size: 0.95rem;
+            color: #475569;
+            flex: 1;
+        }
+        .article-item .readmore {
+            align-self: flex-start;
+            margin-top: 1rem;
+            font-weight: 600;
+            color: var(--brand-blue);
+            text-decoration: none;
+        }
+        .article-item .readmore:hover {
+            text-decoration: underline;
+        }
+
+        /* 侧边栏区域（在大屏幕下可以用两栏布局，这里简化放在底部） */
+        .sidebar-section {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+        }
+        .tag-cloud {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        .tag-badge {
+            background: #fff;
+            border: 1px solid var(--border-line);
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            text-decoration: none;
+            color: var(--text-main);
+            transition: 0.2s;
+        }
+        .tag-badge:hover {
+            background: var(--brand-blue);
+            color: #fff;
+            border-color: var(--brand-blue);
+        }
+
+        footer {
+            background: #020617;
+            color: #94a3b8;
+            padding: 4rem 6%;
+            text-align: center;
+            font-size: 0.9rem;
+            border-top: 1px solid #1e293b;
+            margin-top: 3rem;
+        }
+
+        @media (max-width: 960px) {
+            header {
+                flex-direction: column;
+                gap: 1rem;
+                padding: 1.25rem 5%;
+            }
+            .nav-box {
+                flex-direction: column;
+                gap: 1rem;
+                width: 100%;
+                align-items: center;
+            }
+            nav {
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 0.4rem;
+            }
+            nav a { margin: 0 0.3rem; font-size: 0.88rem; }
+            .github-btn { margin-left: 0; }
+            .articles-hero h1 { font-size: 2rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="/" class="logo">
+            <img src="../logo.webp" alt="Clash verge rev 官网" width="160" height="38">
+            <span>Clash Verge 官网</span>
+        </a>
+        <div class="nav-box">
+            <nav>
+                <a href="../index.html#kernel-evolution">内核原理解析</a>
+                <a href="../download.html">客户端下载</a>
+                <a href="../index.html#scenario-solution">落地场景</a>
+                <a href="../index.html#technical-terms">核心术语表</a>
+                <a href="../install.html">安装教程</a>
+                <a href="../configuration.html">配置教程</a>
+                <a href="import-subscription.html">导入订阅</a>
+                <a href="../enable-tun.html">开启TUN</a>
+                <a href="../dns.html">DNS配置</a>
+                <a href="../rule.html">Rule模式</a>
+                <a href="../fake-ip.html">Fake-IP</a>
+                <a href="../mihomo.html">Mihomo</a>
+                <a href="../faq.html">常见问题</a>
+                <a href="../changelog.html">更新日志</a>
+                <a href="index.html" class="nav-active">文章中心</a>
+                <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/wiki">📚 文档</a>
+            </nav>
+            <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/" class="github-btn" target="_blank" rel="noopener noreferrer">
+                <svg viewBox="0 0 16 16" version="1.1" aria-hidden="true"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+                GitHub 仓库
+            </a>
+        </div>
+    </header>
+
+    <main class="main-wrapper">
+        <section class="articles-hero">
+            <h1>📚 文章中心 · 探索代理技术的深度</h1>
+            <p>从入门到精通，从安装到内核调优——这里汇集了 Clash Verge Rev 的技术干货、版本解读和配置实战。</p>
+            <div class="search-box">
+                <input type="text" id="articleSearch" placeholder="搜索文章标题或关键词...">
+                <button id="searchBtn">🔍 搜索</button>
+            </div>
+        </section>
+
+        <!-- 编辑精选 -->
+        <div class="featured-section">
+            <h2 class="section-title">✨ 编辑精选</h2>
+            <div class="featured-grid" id="featuredContainer"></div>
+        </div>
+
+        <!-- 分类筛选 -->
+        <div class="category-tags" id="categoryTags">
+            <span class="cat-tag active" data-cat="all">全部</span>
+            <span class="cat-tag" data-cat="配置技巧">配置技巧</span>
+            <span class="cat-tag" data-cat="安全加固">安全加固</span>
+            <span class="cat-tag" data-cat="版本解读">版本解读</span>
+            <span class="cat-tag" data-cat="疑难解答">疑难解答</span>
+            <span class="cat-tag" data-cat="工具推荐">工具推荐</span>
+            <span class="cat-tag" data-cat="上手教程">上手教程</span>
+        </div>
+
+        <!-- 文章列表 -->
+        <div id="articleListContainer" class="article-list"></div>
+
+        <!-- 加载更多（可选） -->
+        <div style="text-align: center; margin: 2rem 0;" id="loadMoreWrapper">
+            <button id="loadMoreBtn" style="padding: 0.8rem 2rem; background: var(--brand-blue); color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">加载更多文章</button>
+        </div>
+
+        <!-- 侧边栏：热门标签云 -->
+        <div class="sidebar-section">
+            <h3 style="font-size: 1.5rem; margin-bottom: 1rem;">🏷️ 热门标签</h3>
+            <div class="tag-cloud">
+                <a href="#" class="tag-badge">Clash Verge Rev</a>
+                <a href="#" class="tag-badge">Mihomo 内核</a>
+                <a href="#" class="tag-badge">TUN 模式</a>
+                <a href="#" class="tag-badge">Fake-IP</a>
+                <a href="#" class="tag-badge">DNS 优化</a>
+                <a href="#" class="tag-badge">Rule Provider</a>
+                <a href="#" class="tag-badge">Hysteria2</a>
+                <a href="#" class="tag-badge">订阅管理</a>
+                <a href="#" class="tag-badge">透明代理</a>
+                <a href="#" class="tag-badge">性能调优</a>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="main-wrapper">
+            <p>&copy; 2026 Clash Verge Rev 官网下载中心. 所有技术内容基于社区公开文档，仅供学习与测试。请遵守当地法律法规。</p>
+        </div>
+    </footer>
+
+    <script>
+        // 文章数据（所有文章都存放于此，添加新文章只需在数组开头插入对象）
+        const allArticles = [
+            {
+                id: 1,
+                title: "用 Rule Provider 管理万条规则，配置清爽100倍",
+                excerpt: "还在手动维护上千条分流规则？教你通过 rule-provider 远程加载规则集，自动更新，主配置仅需几行代码。",
+                date: "2026-07-08",
+                category: "配置技巧",
+                link: "rule-provider-guide.html",
+                featured: true
+            },
+            {
+                id: 2,
+                title: "Clash Verge Rev 如何实现零 DNS 泄漏？一文看懂 Fake‑IP",
+                excerpt: "深入解析 Fake‑IP 的映射机制，配合 TUN 模式，让你的 DNS 查询彻底对本地网络隐身。",
+                date: "2026-07-08",
+                category: "安全加固",
+                link: "fake-ip-deep-dive.html",
+                featured: true
+            },
+            {
+                id: 3,
+                title: "v2.5.2 新特性：Hysteria2 协议支持与连接面板",
+                excerpt: "最新版带来 Hysteria2 协议支持，高延迟网络下速度提升明显，新的连接状态面板让调试不再抓瞎。",
+                date: "2026-07-08",
+                category: "版本解读",
+                link: "v2.5.2-highlights.html",
+                featured: true
+            },
+            {
+                id: 4,
+                title: "TUN 模式断网？可能是 DNS 劫持冲突",
+                excerpt: "开启 TUN 后无法上网的常见原因之一是 DNS 被本地防火墙或其它代理篡改，三步排查法帮你解决。",
+                date: "2026-07-08",
+                category: "疑难解答",
+                link: "tun-no-internet-fix.html",
+                featured: false
+            },
+            {
+                id: 5,
+                title: "5 款超好用的在线 DNS 检测工具",
+                excerpt: "dnsleaktest、ipleak、whoer 等工具横向对比，助你精准判断代理是否泄漏真实 IP 和 DNS。",
+                date: "2026-07-08",
+                category: "工具推荐",
+                link: "dns-leak-tools.html",
+                featured: false
+            },
+            {
+                id: 6,
+                title: "从零开始：在 Ubuntu 上部署 Clash Verge Rev 实现全局透明代理",
+                excerpt: "手把手教你用 AppImage 安装，配置 TUN 模式并设置开机自启，让 Linux 设备秒变代理网关。",
+                date: "2026-07-08",
+                category: "上手教程",
+                link: "ubuntu-clash-verge-setup.html",
+                featured: false
+            },
+            {
+                id: 7,
+                title: "进阶：自定义 Mihomo 内核编译与插件开发",
+                excerpt: "想深度定制代理行为？了解 Mihomo 的插件接口，用 Rust 编写自己的流量处理模块。",
+                date: "2026-07-09",
+                category: "配置技巧",
+                link: "mihomo-plugin-dev.html",
+                featured: false
+            },
+            {
+                id: 8,
+                title: "Clash Verge Rev 的多平台同步方案",
+                excerpt: "在不同设备间同步配置和规则集，使用 WebDAV 或 Git 实现无缝切换。",
+                date: "2026-07-09",
+                category: "上手教程",
+                link: "multi-device-sync.html",
+                featured: false
+            }
+        ];
+
+        // 每页显示数量
+        const pageSize = 6;
+        let currentPage = 1;
+        let filteredArticles = [...allArticles];
+        let currentCategory = 'all';
+
+        // 渲染编辑精选
+        function renderFeatured() {
+            const container = document.getElementById('featuredContainer');
+            const featured = allArticles.filter(a => a.featured).slice(0, 3);
+            container.innerHTML = featured.map(article => `
+                <div class="featured-card">
+                    <div class="featured-img">[ 精选配图 ]</div>
+                    <div class="featured-content">
+                        <div class="date">${article.date}</div>
+                        <h3>${article.title}</h3>
+                        <p>${article.excerpt}</p>
+                        <a href="${article.link}">阅读全文 →</a>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 渲染文章列表
+        function renderArticles(page = 1, append = false) {
+            const container = document.getElementById('articleListContainer');
+            const start = (page - 1) * pageSize;
+            const end = start + pageSize;
+            const pageArticles = filteredArticles.slice(start, end);
+            const html = pageArticles.map(article => `
+                <div class="article-item">
+                    <div class="meta">
+                        <span>${article.date}</span>
+                        <span>${article.category}</span>
+                    </div>
+                    <h3>${article.title}</h3>
+                    <p>${article.excerpt}</p>
+                    <a href="${article.link}" class="readmore">阅读全文 →</a>
+                </div>
+            `).join('');
+
+            if (append) {
+                container.innerHTML += html;
+            } else {
+                container.innerHTML = html;
+            }
+
+            // 加载更多按钮是否显示
+            const loadMoreBtn = document.getElementById('loadMoreBtn');
+            const loadMoreWrapper = document.getElementById('loadMoreWrapper');
+            if (end >= filteredArticles.length) {
+                loadMoreWrapper.style.display = 'none';
+            } else {
+                loadMoreWrapper.style.display = 'block';
+                loadMoreBtn.onclick = () => {
+                    currentPage++;
+                    renderArticles(currentPage, true);
+                };
+            }
+        }
+
+        // 分类筛选
+        function filterByCategory(cat) {
+            currentCategory = cat;
+            if (cat === 'all') {
+                filteredArticles = [...allArticles];
+            } else {
+                filteredArticles = allArticles.filter(a => a.category === cat);
+            }
+            currentPage = 1;
+            renderArticles(1);
+            // 更新激活标签样式
+            document.querySelectorAll('.cat-tag').forEach(tag => {
+                tag.classList.remove('active');
+                if (tag.dataset.cat === cat) tag.classList.add('active');
+            });
+        }
+
+        // 搜索功能
+        function performSearch() {
+            const query = document.getElementById('articleSearch').value.trim().toLowerCase();
+            if (query === '') {
+                filteredArticles = currentCategory === 'all' ? [...allArticles] : allArticles.filter(a => a.category === currentCategory);
+            } else {
+                filteredArticles = allArticles.filter(a => 
+                    a.title.toLowerCase().includes(query) || 
+                    a.excerpt.toLowerCase().includes(query) ||
+                    a.category.toLowerCase().includes(query)
+                );
+            }
+            currentPage = 1;
+            renderArticles(1);
+        }
+
+        // 页面初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            renderFeatured();
+            renderArticles(1);
+
+            // 分类标签点击
+            document.querySelectorAll('.cat-tag').forEach(tag => {
+                tag.addEventListener('click', (e) => {
+                    const cat = e.target.dataset.cat;
+                    filterByCategory(cat);
+                });
+            });
+
+            // 搜索按钮
+            document.getElementById('searchBtn').addEventListener('click', performSearch);
+            // 回车搜索
+            document.getElementById('articleSearch').addEventListener('keyup', (e) => {
+                if (e.key === 'Enter') performSearch();
+            });
+        });
+    </script>
+</body>
+</html>
