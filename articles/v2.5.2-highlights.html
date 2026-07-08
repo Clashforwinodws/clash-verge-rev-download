@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>v2.5.2 新特性：Hysteria2 协议支持与连接面板 · Clash Verge Rev 版本解读</title>
+    <meta name="description" content="探索 Clash Verge Rev v2.5.2 的全新亮点：Hysteria2 协议带来的高延迟网络突破、实时连接面板的调试革命，以及多项性能优化与修复。升级指南与配置示例一应俱全。">
+    <meta name="keywords" content="Clash Verge Rev v2.5.2, Hysteria2, 连接面板, 更新日志, 代理客户端更新, 性能优化, 新协议, 实时监控">
+    <link rel="icon" type="image/x-icon" href="../favicon.ico">
+    <link rel="shortcut icon" type="image/x-icon" href="../favicon.ico">
+    <link rel="canonical" href="https://classhvverge.org/articles/v2.5.2-highlights.html">
+    <link rel="stylesheet" href="../index2.css">
+    <!-- 结构化数据：TechArticle -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "TechArticle",
+      "headline": "v2.5.2 新特性：Hysteria2 协议支持与连接面板",
+      "description": "探索 Clash Verge Rev v2.5.2 的全新亮点：Hysteria2 协议带来的高延迟网络突破、实时连接面板的调试革命，以及多项性能优化与修复。升级指南与配置示例一应俱全。",
+      "author": { "@type": "Organization", "name": "Clash Verge Rev 社区" },
+      "datePublished": "2026-07-08",
+      "dateModified": "2026-07-08",
+      "mainEntityOfPage": { "@type": "WebPage", "@id": "https://classhvverge.org/articles/v2.5.2-highlights.html" }
+    }
+    </script>
+    <style>
+        :root {
+            --brand-dark: #0f172a;
+            --brand-blue: #3b82f6;
+            --brand-blue-hover: #2563eb;
+            --text-main: #334155;
+            --text-title: #1e293b;
+            --bg-light: #ffffff;
+            --bg-accent: #f8fafc;
+            --border-line: #cbd5e1;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+            --shadow-md: 0 8px 24px rgba(0,0,0,0.1);
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            color: var(--text-main);
+            line-height: 1.75;
+            background-color: var(--bg-light);
+        }
+
+        /* 导航栏（简化版，与其他文章一致） */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem 6%;
+            background: var(--brand-dark);
+            color: #ffffff;
+            position: sticky;
+            top: 0;
+            z-index: 2000;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #ffffff;
+            text-decoration: none;
+            flex-shrink: 0;
+        }
+        .logo img {
+            width: auto;
+            height: 38px;
+            margin-right: 12px;
+            display: block;
+        }
+        .nav-box {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+        nav {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+        }
+        nav a {
+            margin-left: 0.5rem;
+            text-decoration: none;
+            color: #cbd5e1;
+            font-size: 0.93rem;
+            transition: color 0.2s;
+            white-space: nowrap;
+            padding: 0.25rem 0.35rem;
+            border-radius: 4px;
+        }
+        nav a:hover {
+            color: var(--brand-blue);
+            background-color: rgba(255,255,255,0.05);
+        }
+        nav a.nav-active {
+            color: var(--brand-blue);
+            font-weight: 600;
+            background-color: rgba(59,130,246,0.1);
+        }
+        .github-btn {
+            display: inline-flex;
+            align-items: center;
+            background-color: var(--brand-blue);
+            color: #ffffff;
+            padding: 0.55rem 1.1rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            text-decoration: none;
+            margin-left: 1.5rem;
+            transition: background-color 0.2s;
+            font-weight: 500;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .github-btn:hover {
+            background-color: var(--brand-blue-hover);
+        }
+        .github-btn svg {
+            width: 16px;
+            height: 16px;
+            margin-right: 6px;
+            fill: currentColor;
+        }
+
+        /* 文章容器 */
+        .article-wrapper {
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 3rem 6%;
+        }
+        .article-header {
+            text-align: center;
+            padding: 3rem 0 2rem;
+        }
+        .article-header h1 {
+            font-size: 2.5rem;
+            color: var(--brand-dark);
+            margin-bottom: 1rem;
+            line-height: 1.3;
+        }
+        .article-meta {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            color: #64748b;
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+        .article-meta span {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .featured-image {
+            width: 100%;
+            height: 360px;
+            background: linear-gradient(135deg, #e0f2fe, #f0f9ff);
+            border: 2px dashed #94a3b8;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+            font-size: 1rem;
+            margin-bottom: 2.5rem;
+        }
+
+        /* 内容样式 */
+        .article-content h2 {
+            font-size: 1.9rem;
+            color: var(--brand-dark);
+            margin: 2.5rem 0 1rem;
+            border-left: 5px solid var(--brand-blue);
+            padding-left: 1rem;
+        }
+        .article-content h3 {
+            font-size: 1.5rem;
+            color: var(--text-title);
+            margin: 2rem 0 0.8rem;
+        }
+        .article-content p {
+            margin-bottom: 1.2rem;
+            font-size: 1.05rem;
+            color: #334155;
+        }
+        .code-block {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 1.5rem;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            margin: 1.5rem 0;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        .code-block .key { color: #93c5fd; }
+        .code-block .value { color: #fbbf24; }
+        .code-block .comment { color: #94a3b8; }
+
+        .tip-box {
+            background: #f0f9ff;
+            border-left: 5px solid var(--brand-blue);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+        }
+        .tip-box strong { color: #0f172a; }
+        .info-box {
+            background: #fff7ed;
+            border-left: 5px solid #f97316;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+        }
+        .info-box strong { color: #7c2d12; }
+
+        /* 特性卡片 */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+        .feature-card {
+            background: #ffffff;
+            border: 1px solid var(--border-line);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.2s;
+        }
+        .feature-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-md);
+        }
+        .feature-card .icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        .feature-card h4 {
+            font-size: 1.2rem;
+            color: var(--brand-dark);
+            margin-bottom: 0.5rem;
+        }
+        .feature-card p {
+            font-size: 0.95rem;
+            color: #475569;
+        }
+
+        /* 内链列表 */
+        .related-links {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+        .related-link-card {
+            background: #ffffff;
+            border: 1px solid var(--border-line);
+            border-radius: 10px;
+            padding: 1.2rem;
+            text-decoration: none;
+            color: var(--text-main);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .related-link-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-md);
+        }
+        .related-link-card h4 {
+            font-size: 1.1rem;
+            color: var(--brand-dark);
+            margin-bottom: 0.3rem;
+        }
+        .related-link-card p {
+            font-size: 0.85rem;
+            color: #64748b;
+        }
+
+        /* 目录导航 */
+        .table-of-contents {
+            background: #f8fafc;
+            border: 1px solid var(--border-line);
+            border-radius: 10px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 2rem;
+        }
+        .table-of-contents h3 {
+            margin-bottom: 0.8rem;
+            font-size: 1.2rem;
+            color: var(--brand-dark);
+        }
+        .table-of-contents ul {
+            list-style: none;
+            columns: 2;
+            column-gap: 2rem;
+        }
+        .table-of-contents li {
+            margin-bottom: 0.4rem;
+        }
+        .table-of-contents a {
+            color: var(--brand-blue);
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .table-of-contents a:hover {
+            text-decoration: underline;
+        }
+
+        footer {
+            background: #020617;
+            color: #94a3b8;
+            padding: 4rem 6%;
+            text-align: center;
+            font-size: 0.9rem;
+            border-top: 1px solid #1e293b;
+            margin-top: 3rem;
+        }
+
+        @media (max-width: 768px) {
+            header {
+                flex-direction: column;
+                gap: 1rem;
+                padding: 1.25rem 5%;
+            }
+            .nav-box {
+                flex-direction: column;
+                gap: 1rem;
+                width: 100%;
+                align-items: center;
+            }
+            nav {
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 0.4rem;
+            }
+            nav a { margin: 0 0.3rem; font-size: 0.88rem; }
+            .github-btn { margin-left: 0; }
+            .article-header h1 { font-size: 1.9rem; }
+            .table-of-contents ul { columns: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="../index.html" class="logo">
+            <img src="../logo.webp" alt="Clash verge rev 官网" width="160" height="38">
+            <span>Clash Verge 官网</span>
+        </a>
+        <div class="nav-box">
+            <nav>
+                <a href="../download.html">客户端下载</a>
+                <a href="../install.html">安装教程</a>
+                <a href="../configuration.html">配置教程</a>
+                <a href="../faq.html">常见问题</a>
+                <a href="../changelog.html">更新日志</a>
+                <a href="index.html" class="nav-active">文章中心</a>
+                <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/wiki">📚 文档</a>
+            </nav>
+            <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/" class="github-btn" target="_blank" rel="noopener noreferrer">
+                <svg viewBox="0 0 16 16" version="1.1" aria-hidden="true"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+                GitHub 仓库
+            </a>
+        </div>
+    </header>
+
+    <main class="article-wrapper">
+        <article>
+            <div class="article-header">
+                <h1>v2.5.2 新特性：Hysteria2 协议支持与连接面板</h1>
+                <div class="article-meta">
+                    <span>📅 2026-07-08</span>
+                    <span>🏷️ 版本解读</span>
+                    <span>⏱️ 阅读约 7 分钟</span>
+                    <span>📦 v2.5.2</span>
+                </div>
+            </div>
+
+            <div class="featured-image">
+                [ v2.5.2 新功能展示图 - Hysteria2 连接与实时面板 ]
+            </div>
+
+            <!-- 文章目录 -->
+            <div class="table-of-contents">
+                <h3>📑 本文目录</h3>
+                <ul>
+                    <li><a href="#overview">1. 版本总览</a></li>
+                    <li><a href="#hysteria2">2. Hysteria2 协议：高速与抗丢包</a></li>
+                    <li><a href="#panel">3. 全新连接面板：透明化调试</a></li>
+                    <li><a href="#improvements">4. 性能与稳定性改进</a></li>
+                    <li><a href="#config">5. 配置示例与快速迁移</a></li>
+                    <li><a href="#upgrade">6. 升级建议与注意事项</a></li>
+                    <li><a href="#faq">7. 常见问题</a></li>
+                </ul>
+            </div>
+
+            <div class="article-content">
+                <!-- 1. 版本总览 -->
+                <h2 id="overview">🌟 版本总览</h2>
+                <p>Clash Verge Rev v2.5.2 已于 2026 年 6 月 20 日正式发布。这个版本被社区称为“性能与体验的双重飞跃”——不仅引入了备受期待的 <strong>Hysteria2 协议</strong>，还带来了全新的 <strong>实时连接面板</strong>，让原本黑盒的代理调试变得清晰可见。此外，Mihomo 内核的 UDP 转发性能也得到显著提升，整体资源占用进一步降低。如果你想了解完整的变更清单，可以翻阅 <a href="../changelog.html" target="_blank">更新日志</a> 页面，本文将着重解读最核心的两大特性。</p>
+
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="icon">⚡</div>
+                        <h4>Hysteria2 协议</h4>
+                        <p>基于 QUIC 的高性能代理协议，在高延迟和丢包环境下仍能保持卓越吞吐量。</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="icon">📊</div>
+                        <h4>连接状态面板</h4>
+                        <p>实时查看每条代理连接的速度、延迟和状态，排查问题不再依赖猜谜。</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="icon">🔧</div>
+                        <h4>配置快照功能</h4>
+                        <p>一键保存和回滚配置版本，实验新规则再无后顾之忧。</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="icon">🚀</div>
+                        <h4>UDP 性能优化</h4>
+                        <p>游戏和语音场景延迟降低约 15%，TUN 模式体验更流畅。</p>
+                    </div>
+                </div>
+
+                <!-- 2. Hysteria2 协议 -->
+                <h2 id="hysteria2">🚄 Hysteria2 协议：为高延迟网络而生</h2>
+                <p>Hysteria2 是原 Hysteria 协议的全新迭代，基于修改版的 QUIC 协议（IETF 标准），专门为不稳定、高延迟的网络环境设计。与依赖 TCP 的传统协议不同，Hysteria2 在 UDP 上运行，并内置了智能拥塞控制算法。这使得它在跨洲际连接、移动网络或卫星链路上，表现远超 Shadowsocks 和 VMess。</p>
+
+                <h3>核心优势</h3>
+                <ul style="margin-bottom: 1.5rem; padding-left: 1.5rem;">
+                    <li><strong>抗丢包能力</strong>：即使丢包率达到 20%，连接依然稳定，不会出现 TCP 的“重传风暴”。</li>
+                    <li><strong>低延迟</strong>：0-RTT 握手，连接建立速度比 TLS 快数倍。</li>
+                    <li><strong>多路复用</strong>：一条连接承载所有流量，减少握手开销。</li>
+                    <li><strong>端口跳跃</strong>：支持动态端口切换，绕过 QoS 限制。</li>
+                </ul>
+
+                <div class="tip-box">
+                    <strong>💡 适合场景：</strong>跨国游戏加速、视频会议、实时语音传输。如果你在使用 <a href="../enable-tun.html" target="_blank">TUN 模式</a> 玩外服游戏时经常遇到卡顿，升级到 Hysteria2 节点会有明显改善。
+                </div>
+
+                <p>在 Clash Verge Rev 中使用 Hysteria2 非常简单。只需确保你的机场或自建节点支持 Hysteria2 协议，然后将节点信息填入配置文件即可。以下是一个典型的 Hysteria2 节点配置片段：</p>
+                <div class="code-block">
+<span class="comment"># Hysteria2 节点示例</span>
+<span class="key">- name:</span> <span class="value">"Hysteria2 节点"</span>
+  <span class="key">type:</span> <span class="value">hysteria2</span>
+  <span class="key">server:</span> <span class="value">your-server.com</span>
+  <span class="key">port:</span> <span class="value">443</span>
+  <span class="key">password:</span> <span class="value">your-password</span>
+  <span class="key">up:</span> <span class="value">50</span>       <span class="comment"># 上传带宽 (Mbps)</span>
+  <span class="key">down:</span> <span class="value">200</span>      <span class="comment"># 下载带宽 (Mbps)</span>
+  <span class="key">sni:</span> <span class="value">www.bing.com</span>  <span class="comment"># 伪装 SNI</span>
+                </div>
+                <p>配置完成后，在 <a href="../configuration.html" target="_blank">配置教程</a> 中提到的策略组里选择该节点即可。Mihomo 内核会自动采用 QUIC 进行传输，你可以通过新连接面板直观地看到握手和传输过程。</p>
+
+                <!-- 3. 连接面板 -->
+                <h2 id="panel">📊 全新连接面板：让网络透明化</h2>
+                <p>以往排查代理问题时，我们往往需要依赖日志文件，甚至是抓包工具。v2.5.2 引入的“连接状态”面板彻底改变了这一体验。在 Clash Verge Rev 左侧菜单点击 <strong>“连接”</strong>，你将看到一个实时更新的列表，展示所有活跃的代理连接。</p>
+
+                <h3>面板信息包含：</h3>
+                <ul style="margin-bottom: 1.5rem; padding-left: 1.5rem;">
+                    <li><strong>目标地址</strong>：流量最终要访问的域名或 IP。</li>
+                    <li><strong>代理链</strong>：从本地应用到具体节点的完整路径。</li>
+                    <li><strong>实时速度</strong>：当前连接的上传/下载速率。</li>
+                    <li><strong>延迟 (RTT)</strong>：从发起请求到收到响应的耗时。</li>
+                    <li><strong>规则命中</strong>：显示了该连接被哪条规则匹配（例如 “DOMAIN-SUFFIX,google.com,Proxy”）。</li>
+                </ul>
+                <p>这项功能对调试 <a href="../rule.html" target="_blank">Rule 模式</a> 的分流规则尤其有用。以前你可能困惑“为什么这个网站走了直连？”，现在只需打开面板，找到对应连接，就能看到究竟是哪条规则导致了该结果。此外，面板还支持按状态过滤（如只显示“失败”连接），快速定位问题。日常使用中，你也可以通过它监控哪些应用在大量消耗代理带宽，方便进行流量管理。</p>
+
+                <!-- 4. 性能改进 -->
+                <h2 id="improvements">⚙️ 更多性能与稳定性改进</h2>
+                <p>除了两大新功能，v2.5.2 还包含多项底层优化：</p>
+                <ul style="margin-bottom: 1.5rem; padding-left: 1.5rem;">
+                    <li><strong>UDP 转发效率提升 15%</strong>：受益于 Mihomo 内核的异步 I/O 调整，游戏和语音应用的延迟明显降低，结合 <a href="../enable-tun.html" target="_blank">TUN 模式</a> 效果更佳。</li>
+                    <li><strong>Fake‑IP 内存占用降低</strong>：大规模规则集场景下，内存占用减少约 30%，低配设备也能流畅运行。有关原理可阅读 <a href="fake-ip-deep-dive.html" target="_blank">Fake‑IP 深度解析</a>。</li>
+                    <li><strong>订阅更新机制优化</strong>：修复了某些机场订阅解析失败的问题，并支持更灵活的更新间隔设置。</li>
+                    <li><strong>配置快照功能</strong>：在配置页面可以创建当前配置的快照，若新配置出错，一键恢复。这为频繁修改规则的用户提供了安全网。</li>
+                </ul>
+                <div class="info-box">
+                    <strong>⚠️ 注意：</strong>如果你是从 v2.5.0 之前的版本升级，建议先备份配置文件。新版本对 <code>dns</code> 字段的部分默认值有微调，具体可查阅 <a href="../changelog.html" target="_blank">更新日志</a>。
+                </div>
+
+                <!-- 5. 配置示例 -->
+                <h2 id="config">🧪 配置示例与快速迁移</h2>
+                <p>如果你已经拥有 Hysteria2 节点，可以直接在现有配置中添加 <code>proxies</code> 列表，然后在 <code>proxy-groups</code> 中引用。以下是一个结合了 Hysteria2 和自动选择策略的完整配置片段：</p>
+                <div class="code-block">
+<span class="comment"># 代理节点</span>
+<span class="key">proxies:</span>
+  - <span class="key">name:</span> <span class="value">"Hysteria2 高速节点"</span>
+    <span class="key">type:</span> <span class="value">hysteria2</span>
+    <span class="key">server:</span> <span class="value">proxy.example.com</span>
+    <span class="key">port:</span> <span class="value">443</span>
+    <span class="key">password:</span> <span class="value">your_pass</span>
+    <span class="key">up:</span> <span class="value">80</span>
+    <span class="key">down:</span> <span class="value">300</span>
+
+<span class="comment"># 策略组（自动选择最低延迟节点）</span>
+<span class="key">proxy-groups:</span>
+  - <span class="key">name:</span> <span class="value">"自动选择"</span>
+    <span class="key">type:</span> <span class="value">url-test</span>
+    <span class="key">proxies:</span> <span class="value">[Hysteria2 高速节点, 其他节点]</span>
+    <span class="key">url:</span> <span class="value">'http://www.gstatic.com/generate_204'</span>
+    <span class="key">interval:</span> <span class="value">300</span>
+                </div>
+                <p>保存后，打开连接面板观察新节点的延迟和速度。如果喜欢手动控制，可以将策略组类型改为 <code>select</code>，在界面上随时切换。更多的策略组玩法请参考 <a href="../configuration.html" target="_blank">配置教程</a>。</p>
+
+                <!-- 6. 升级建议 -->
+                <h2 id="upgrade">📦 升级建议与注意事项</h2>
+                <p>强烈建议所有用户升级到 v2.5.2。你可以通过 <a href="../download.html" target="_blank">客户端下载</a> 页面获取最新安装包，或者使用 Clash Verge Rev 内置的“检查更新”功能。升级过程中请注意：</p>
+                <ul style="margin-bottom: 1.5rem; padding-left: 1.5rem;">
+                    <li>原有配置文件完全兼容，无需修改。</li>
+                    <li>首次使用 Hysteria2 可能需要安装最新的 Mihomo 内核，客户端会自动处理。</li>
+                    <li>如果连接面板显示空白，请检查是否以管理员权限运行，TUN 模式下需确保虚拟网卡正常。</li>
+                </ul>
+                <p>若在升级后遇到问题，可以先查看 <a href="../faq.html" target="_blank">常见问题</a> 或 <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/wiki" target="_blank" rel="noopener">GitHub Wiki</a>，社区已经在收集反馈。</p>
+
+                <!-- 7. 常见问题 -->
+                <h2 id="faq">❓ 关于 v2.5.2 的常见问题</h2>
+                <p><strong>Q: Hysteria2 和 Hysteria 有什么区别？</strong><br>
+                Hysteria2 是全新的协议版本，不再兼容原版 Hysteria。它放弃了自定义的拥塞控制，转而采用标准 QUIC，在可靠性和穿透性上更优，且配置更简单。</p>
+                <p><strong>Q: 连接面板会占用大量资源吗？</strong><br>
+                面板采用增量渲染，对 CPU 和内存的影响微乎其微。即使在低配设备上，同时显示数百条连接也不会感到卡顿。</p>
+                <p><strong>Q: 升级后旧的节点还能用吗？</strong><br>
+                完全可以。v2.5.2 向下兼容所有旧协议节点，你只需在需要时添加 Hysteria2 节点即可。</p>
+                <p><strong>Q: 如何查看更详细的版本变更？</strong><br>
+                请访问 <a href="../changelog.html" target="_blank">更新日志</a> 页面，或者查看 GitHub Releases 的完整说明。</p>
+            </div>
+
+            <!-- 相关文章内链 -->
+            <h3 style="font-size: 1.5rem; margin: 2.5rem 0 1rem;">📖 继续阅读</h3>
+            <div class="related-links">
+                <a href="../changelog.html" class="related-link-card">
+                    <h4>📜 更新日志</h4>
+                    <p>所有版本变更记录</p>
+                </a>
+                <a href="../configuration.html" class="related-link-card">
+                    <h4>📘 配置教程</h4>
+                    <p>从零开始的配置指南</p>
+                </a>
+                <a href="../enable-tun.html" class="related-link-card">
+                    <h4>🔌 开启 TUN 模式</h4>
+                    <p>实现真正全局代理</p>
+                </a>
+                <a href="rule-provider-guide.html" class="related-link-card">
+                    <h4>📦 Rule Provider 实战</h4>
+                    <p>用远程规则集简化配置</p>
+                </a>
+                <a href="fake-ip-deep-dive.html" class="related-link-card">
+                    <h4>🎭 Fake‑IP 深度解析</h4>
+                    <p>零 DNS 泄漏的实现原理</p>
+                </a>
+                <a href="../faq.html" class="related-link-card">
+                    <h4>❓ 常见问题</h4>
+                    <p>安装与使用问题排查</p>
+                </a>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="main-wrapper">
+            <p>&copy; 2026 Clash Verge Rev 官网下载中心. 所有技术内容基于社区公开文档，仅供学习与测试。请遵守当地法律法规。</p>
+        </div>
+    </footer>
+
+</body>
+</html>
