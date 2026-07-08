@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TUN 模式断网？三步排查 DNS 劫持冲突 · Clash Verge Rev 故障修复</title>
+    <meta name="description" content="TUN 模式开启后无法上网？很可能是 DNS 劫持冲突在作祟。本文详解 DNS 劫持如何导致断网，并提供从诊断到修复的完整实战方案，助你快速恢复 Clash Verge Rev 的全局代理。">
+    <meta name="keywords" content="TUN 模式断网, DNS 劫持, TUN 无法上网, DNS 冲突, Clash Verge Rev 故障, 代理无网络, DNS 修复">
+    <link rel="icon" type="image/x-icon" href="../favicon.ico">
+    <link rel="shortcut icon" type="image/x-icon" href="../favicon.ico">
+    <link rel="canonical" href="https://classhvverge.org/articles/tun-no-internet-fix.html">
+    <link rel="stylesheet" href="../index2.css">
+    <!-- 结构化数据：TechArticle -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "TechArticle",
+      "headline": "TUN 模式断网？三步排查 DNS 劫持冲突",
+      "description": "TUN 模式开启后无法上网？很可能是 DNS 劫持冲突在作祟。本文详解 DNS 劫持如何导致断网，并提供从诊断到修复的完整实战方案，助你快速恢复 Clash Verge Rev 的全局代理。",
+      "author": { "@type": "Organization", "name": "Clash Verge Rev 社区" },
+      "datePublished": "2026-07-08",
+      "dateModified": "2026-07-08",
+      "mainEntityOfPage": { "@type": "WebPage", "@id": "https://classhvverge.org/articles/tun-no-internet-fix.html" }
+    }
+    </script>
+    <style>
+        :root {
+            --brand-dark: #0f172a;
+            --brand-blue: #3b82f6;
+            --brand-blue-hover: #2563eb;
+            --text-main: #334155;
+            --text-title: #1e293b;
+            --bg-light: #ffffff;
+            --bg-accent: #f8fafc;
+            --border-line: #cbd5e1;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+            --shadow-md: 0 8px 24px rgba(0,0,0,0.1);
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            color: var(--text-main);
+            line-height: 1.75;
+            background-color: var(--bg-light);
+        }
+
+        /* 导航栏（简化版） */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem 6%;
+            background: var(--brand-dark);
+            color: #ffffff;
+            position: sticky;
+            top: 0;
+            z-index: 2000;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #ffffff;
+            text-decoration: none;
+            flex-shrink: 0;
+        }
+        .logo img {
+            width: auto;
+            height: 38px;
+            margin-right: 12px;
+            display: block;
+        }
+        .nav-box {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+        nav {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+        }
+        nav a {
+            margin-left: 0.5rem;
+            text-decoration: none;
+            color: #cbd5e1;
+            font-size: 0.93rem;
+            transition: color 0.2s;
+            white-space: nowrap;
+            padding: 0.25rem 0.35rem;
+            border-radius: 4px;
+        }
+        nav a:hover {
+            color: var(--brand-blue);
+            background-color: rgba(255,255,255,0.05);
+        }
+        nav a.nav-active {
+            color: var(--brand-blue);
+            font-weight: 600;
+            background-color: rgba(59,130,246,0.1);
+        }
+        .github-btn {
+            display: inline-flex;
+            align-items: center;
+            background-color: var(--brand-blue);
+            color: #ffffff;
+            padding: 0.55rem 1.1rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            text-decoration: none;
+            margin-left: 1.5rem;
+            transition: background-color 0.2s;
+            font-weight: 500;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .github-btn:hover {
+            background-color: var(--brand-blue-hover);
+        }
+        .github-btn svg {
+            width: 16px;
+            height: 16px;
+            margin-right: 6px;
+            fill: currentColor;
+        }
+
+        /* 文章容器 */
+        .article-wrapper {
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 3rem 6%;
+        }
+        .article-header {
+            text-align: center;
+            padding: 3rem 0 2rem;
+        }
+        .article-header h1 {
+            font-size: 2.5rem;
+            color: var(--brand-dark);
+            margin-bottom: 1rem;
+            line-height: 1.3;
+        }
+        .article-meta {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            color: #64748b;
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+        .article-meta span {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .featured-image {
+            width: 100%;
+            height: 320px;
+            background: #f1f5f9;
+            border: 2px dashed #94a3b8;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+            font-size: 0.95rem;
+            margin-bottom: 2.5rem;
+        }
+
+        /* 内容样式 */
+        .article-content h2 {
+            font-size: 1.9rem;
+            color: var(--brand-dark);
+            margin: 2.5rem 0 1rem;
+            border-left: 5px solid var(--brand-blue);
+            padding-left: 1rem;
+        }
+        .article-content h3 {
+            font-size: 1.5rem;
+            color: var(--text-title);
+            margin: 2rem 0 0.8rem;
+        }
+        .article-content p {
+            margin-bottom: 1.2rem;
+            font-size: 1.05rem;
+            color: #334155;
+        }
+        .code-block {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 1.5rem;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            margin: 1.5rem 0;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        .code-block .key { color: #93c5fd; }
+        .code-block .value { color: #fbbf24; }
+        .code-block .comment { color: #94a3b8; }
+
+        .tip-box {
+            background: #f0f9ff;
+            border-left: 5px solid var(--brand-blue);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+        }
+        .tip-box strong { color: #0f172a; }
+        .info-box {
+            background: #fff7ed;
+            border-left: 5px solid #f97316;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+        }
+        .info-box strong { color: #7c2d12; }
+
+        /* 步骤卡片 */
+        .steps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+        .step-card {
+            background: #ffffff;
+            border: 1px solid var(--border-line);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.2s;
+        }
+        .step-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-md);
+        }
+        .step-number {
+            display: inline-block;
+            width: 2.5rem;
+            height: 2.5rem;
+            background: var(--brand-dark);
+            color: #fff;
+            border-radius: 50%;
+            line-height: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.8rem;
+        }
+        .step-card h4 {
+            margin-bottom: 0.5rem;
+            color: var(--brand-dark);
+        }
+        .step-card p {
+            font-size: 0.9rem;
+            color: #475569;
+        }
+
+        /* 内链列表 */
+        .related-links {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+        .related-link-card {
+            background: #ffffff;
+            border: 1px solid var(--border-line);
+            border-radius: 10px;
+            padding: 1.2rem;
+            text-decoration: none;
+            color: var(--text-main);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .related-link-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-md);
+        }
+        .related-link-card h4 {
+            font-size: 1.1rem;
+            color: var(--brand-dark);
+            margin-bottom: 0.3rem;
+        }
+        .related-link-card p {
+            font-size: 0.85rem;
+            color: #64748b;
+        }
+
+        /* 目录 */
+        .table-of-contents {
+            background: #f8fafc;
+            border: 1px solid var(--border-line);
+            border-radius: 10px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 2rem;
+        }
+        .table-of-contents h3 {
+            margin-bottom: 0.8rem;
+            font-size: 1.2rem;
+            color: var(--brand-dark);
+        }
+        .table-of-contents ul {
+            list-style: none;
+            columns: 2;
+            column-gap: 2rem;
+        }
+        .table-of-contents li {
+            margin-bottom: 0.4rem;
+        }
+        .table-of-contents a {
+            color: var(--brand-blue);
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .table-of-contents a:hover {
+            text-decoration: underline;
+        }
+
+        footer {
+            background: #020617;
+            color: #94a3b8;
+            padding: 4rem 6%;
+            text-align: center;
+            font-size: 0.9rem;
+            border-top: 1px solid #1e293b;
+            margin-top: 3rem;
+        }
+
+        @media (max-width: 768px) {
+            header {
+                flex-direction: column;
+                gap: 1rem;
+                padding: 1.25rem 5%;
+            }
+            .nav-box {
+                flex-direction: column;
+                gap: 1rem;
+                width: 100%;
+                align-items: center;
+            }
+            nav {
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 0.4rem;
+            }
+            nav a { margin: 0 0.3rem; font-size: 0.88rem; }
+            .github-btn { margin-left: 0; }
+            .article-header h1 { font-size: 1.9rem; }
+            .table-of-contents ul { columns: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="../index.html" class="logo">
+            <img src="../logo.webp" alt="Clash verge rev 官网" width="160" height="38">
+            <span>Clash Verge 官网</span>
+        </a>
+        <div class="nav-box">
+            <nav>
+                <a href="../download.html">客户端下载</a>
+                <a href="../install.html">安装教程</a>
+                <a href="../configuration.html">配置教程</a>
+                <a href="../faq.html">常见问题</a>
+                <a href="../changelog.html">更新日志</a>
+                <a href="index.html" class="nav-active">文章中心</a>
+                <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/wiki">📚 文档</a>
+            </nav>
+            <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/" class="github-btn" target="_blank" rel="noopener noreferrer">
+                <svg viewBox="0 0 16 16" version="1.1" aria-hidden="true"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+                GitHub 仓库
+            </a>
+        </div>
+    </header>
+
+    <main class="article-wrapper">
+        <article>
+            <div class="article-header">
+                <h1>TUN 模式断网？三步排查 DNS 劫持冲突</h1>
+                <div class="article-meta">
+                    <span>📅 2026-07-08</span>
+                    <span>🏷️ 疑难解答</span>
+                    <span>⏱️ 阅读约 6 分钟</span>
+                </div>
+            </div>
+
+            <div class="featured-image">
+                [ DNS 劫持冲突示意图 - 代理与本地 DNS 争夺解析权 ]
+            </div>
+
+            <!-- 文章目录 -->
+            <div class="table-of-contents">
+                <h3>📑 本文目录</h3>
+                <ul>
+                    <li><a href="#symptom">1. 现象：TUN 开启后网络瘫痪</a></li>
+                    <li><a href="#root-cause">2. 根因：DNS 劫持冲突解析</a></li>
+                    <li><a href="#diagnose">3. 三步诊断法</a></li>
+                    <li><a href="#fix">4. 三种修复方案</a></li>
+                    <li><a href="#prevent">5. 预防与长效配置</a></li>
+                    <li><a href="#faq">6. 常见问题延伸</a></li>
+                </ul>
+            </div>
+
+            <div class="article-content">
+                <!-- 1. 现象 -->
+                <h2 id="symptom">🔴 现象：TUN 开启后，网络彻底瘫痪</h2>
+                <p>你按照教程在 Clash Verge Rev 中启用了 TUN 模式，期待获得全局代理的无缝体验。然而，开关打开后，浏览器无法加载任何网页，终端 ping 也超时，甚至连原本正常的本地网络访问都消失了。关闭 TUN 后一切恢复如初。这种“开了 TUN 就没网，关了就有网”的问题，在许多用户的初次配置中屡见不鲜。</p>
+                <p>许多人的第一反应是“节点挂了”或“代理配置错了”，但实际上，只要系统代理正常，节点本身通常是可用的。<strong>最常见的故障原因是 DNS 劫持冲突。</strong>你的本地 DNS 服务和 TUN 虚拟网卡在争夺 DNS 解析权，导致网络请求在第一步就卡死。</p>
+
+                <!-- 2. 根因分析 -->
+                <h2 id="root-cause">🧬 根因：DNS 劫持冲突是如何发生的？</h2>
+                <p>要理解这个问题，我们需要先了解 TUN 模式的工作原理。启用 TUN 后，Clash Verge Rev 会在系统内核层面植入一张虚拟网卡，并修改路由表，将所有流量导向这张虚拟网卡。其中，DNS 请求（UDP 53端口）也被强制接管，以便实现 <a href="../dns.html" target="_blank">DNS 优化</a> 和防污染。</p>
+                <p>问题在于，操作系统或某些安全软件（如 Windows Defender、火绒、360 等）可能已经将自己的 DNS 服务绑定到了 <code>127.0.0.1:53</code> 或其它地址。当 TUN 模式试图劫持 DNS 请求时，就会产生<strong>链路冲突</strong>：</p>
+                <ul style="margin-bottom: 1.5rem; padding-left: 1.5rem;">
+                    <li>Clash 内核想要将 DNS 包发往远程加密服务器，但本地 DNS 服务已抢先拦截并返回了错误响应（如 127.0.0.1 或内网地址）。</li>
+                    <li>或者，TUN 虚拟网卡捕获了 DNS 包，却被本地防火墙或 DNS 代理再次捕获，形成循环重定向，导致超时。</li>
+                </ul>
+                <p>这种冲突的典型表现是：你可以 ping 通 IP 地址（如 8.8.8.8），但 ping 域名（如 google.com）失败，浏览器显示“DNS_PROBE_FINISHED_NO_INTERNET”或“ERR_NAME_NOT_RESOLVED”。如果你在 <a href="../fake-ip.html" target="_blank">Fake‑IP 模式</a> 下，则可能表现为所有连接超时，因为虚拟 IP 无法被解析。</p>
+
+                <!-- 3. 诊断步骤 -->
+                <h2 id="diagnose">🔍 三步诊断：确认是 DNS 劫持冲突</h2>
+                <p>在进行任何修改之前，先通过以下步骤准确定位问题：</p>
+
+                <div class="steps-grid">
+                    <div class="step-card">
+                        <div class="step-number">1</div>
+                        <h4>检查 IP 连通性</h4>
+                        <p>在命令行执行 <code>ping 8.8.8.8</code>。如果能通，说明网络层正常，问题出在 DNS。</p>
+                    </div>
+                    <div class="step-card">
+                        <div class="step-number">2</div>
+                        <h4>测试域名解析</h4>
+                        <p><code>nslookup google.com</code> 或 <code>dig google.com</code>。若返回超时或服务器为 127.0.0.1，则 DNS 被劫持。</p>
+                    </div>
+                    <div class="step-card">
+                        <div class="step-number">3</div>
+                        <h4>查看 Clash 日志</h4>
+                        <p>在 Clash Verge Rev 的“日志”页面搜索“dns”或“timeout”，观察是否有 DNS 相关报错。</p>
+                    </div>
+                </div>
+
+                <p>一旦确认 DNS 无法正常解析，且 IP 层通信正常，就可以推断为 DNS 劫持冲突。接下来，我们提供三种修复方案，从简单到彻底，你可以根据实际环境选择。</p>
+
+                <!-- 4. 修复方案 -->
+                <h2 id="fix">🛠️ 三种修复方案</h2>
+
+                <h3>方案一：关闭本地 DNS 服务 (Windows)</h3>
+                <p>Windows 系统内置的 DNS Client 服务经常是冲突元凶。你可以通过以下命令临时停止并禁用：</p>
+                <div class="code-block">
+<span class="comment"># 以管理员身份运行 CMD</span>
+<span class="value">net stop dnscache</span>
+<span class="value">sc config dnscache start=disabled</span>
+                </div>
+                <p>重启 Clash Verge Rev 后，TUN 模式的 DNS 劫持通常能正常工作。如果不想禁用，也可以在 Clash 的 DNS 设置中将 <code>listen</code> 改为 <code>0.0.0.0:5353</code> 等非 53 端口，并配置系统防火墙将 UDP 53 流量转发到该端口（稍复杂，建议优先方案二）。</p>
+
+                <h3>方案二：切换 TUN 堆栈为 gVisor</h3>
+                <p>在 Clash Verge Rev 的 TUN 设置中，将“堆栈”从 <strong>System</strong> 切换为 <strong>gVisor</strong>。gVisor 是一种用户空间网络栈，不依赖操作系统内核的协议栈实现，可以有效避免与本地 DNS 服务的端口冲突。</p>
+                <div class="tip-box">
+                    <strong>💡 优势：</strong> gVisor 堆栈在受限环境下（如无管理员权限、系统组件缺失）表现更稳定，虽然 CPU 占用略高，但对日常使用几乎无影响。
+                </div>
+                <p>切换后重启 TUN 模式，大部分 DNS 劫持冲突就会消失。如果仍存在问题，进入方案三。</p>
+
+                <h3>方案三：修改 Clash DNS 监听与防火墙规则</h3>
+                <p>如果上述方案无效，你可能需要手动指定 DNS 监听地址，并在系统防火墙中放行。在配置文件中添加如下 <code>dns</code> 段：</p>
+                <div class="code-block">
+<span class="key">dns:</span>
+  <span class="key">enable:</span> <span class="value">true</span>
+  <span class="key">listen:</span> <span class="value">0.0.0.0:7874</span>   <span class="comment"># 使用非标准端口</span>
+  <span class="key">enhanced-mode:</span> <span class="value">fake-ip</span>
+  <span class="key">dns-hijack:</span>
+    - <span class="value">any:53</span>
+                </div>
+                <p>然后，在 Windows 防火墙中新建入站规则，允许 UDP 端口 7874。同时，确保你的安全软件没有拦截 Clash 的网络访问。如果还是不行，可以参考 <a href="../faq.html" target="_blank">常见问题</a> 中的更多排查技巧。</p>
+
+                <!-- 5. 预防与长效配置 -->
+                <h2 id="prevent">🧘 预防与长效配置建议</h2>
+                <p>为了避免每次开启 TUN 都陷入断网恐慌，你可以采取以下预防措施：</p>
+                <ul style="margin-bottom: 1.5rem; padding-left: 1.5rem;">
+                    <li><strong>固定使用 gVisor 堆栈</strong>：除非有特殊需要，gVisor 是更稳妥的选择。</li>
+                    <li><strong>创建配置文件快照</strong>：在 Clash Verge Rev v2.5.2 中，你可以保存一套经过验证的配置快照，出问题时一键回滚。参考 <a href="v2.5.2-highlights.html" target="_blank">v2.5.2 新特性解读</a>。</li>
+                    <li><strong>避免安装多个代理/加速软件</strong>：VPN、网游加速器、抓包工具等都可能安装自己的虚拟网卡和 DNS 代理，与 Clash 产生冲突。尽量只保留一个网络接管软件。</li>
+                    <li><strong>定期检查 DNS 服务器状态</strong>：使用 <code>nslookup -q=ns google.com 8.8.8.8</code> 等命令验证上游 DNS 可用性。</li>
+                </ul>
+                <p>如果问题依旧，不妨检查一下 <a href="../configuration.html" target="_blank">配置教程</a> 中的完整参数，确保 <code>tun</code> 字段的 <code>auto-route</code> 和 <code>auto-detect-interface</code> 设置正确。这些细节往往会影响 TUN 的稳定性。</p>
+
+                <!-- 6. 常见问题 -->
+                <h2 id="faq">❓ 常见问题延伸</h2>
+                <p><strong>Q: 关闭本地 DNS 服务会影响其他程序吗？</strong><br>
+                Windows DNS Client 主要提供缓存功能，关闭后系统会直接向配置的 DNS 服务器查询，速度略降但几乎无感。如果介意，可以在 Clash 中配置 <a href="../dns.html" target="_blank">DNS 缓存</a> 代替。</p>
+                <p><strong>Q: gVisor 堆栈下 UDP 游戏会受影响吗？</strong><br>
+                不会。gVisor 对 UDP 的支持已经非常成熟，v2.5.2 还对 UDP 转发做了优化，游戏延迟甚至比 system 堆栈更低。</p>
+                <p><strong>Q: 手机端开启 TUN 也断网怎么办？</strong><br>
+                Android/iOS 的 VPN 接口机制不同，通常是因为权限不足或 APN 设置错误。请确保 Clash 已获得 VPN 权限，并检查 APN 代理是否关闭。具体可查阅 <a href="../enable-tun.html" target="_blank">开启 TUN 模式</a> 一文。</p>
+                <p><strong>Q: 修复后依然时不时断流？</strong><br>
+                可能是网络环境波动导致规则失效。尝试在规则中添加一条 <code>DOMAIN-KEYWORD,clash,DIRECT</code> 防止循环，同时检查 <a href="rule-provider-guide.html" target="_blank">Rule Provider</a> 是否更新正常。</p>
+            </div>
+
+            <!-- 相关文章内链 -->
+            <h3 style="font-size: 1.5rem; margin: 2.5rem 0 1rem;">📖 继续阅读</h3>
+            <div class="related-links">
+                <a href="../enable-tun.html" class="related-link-card">
+                    <h4>🔌 开启 TUN 模式</h4>
+                    <p>从零配置 TUN 全局代理</p>
+                </a>
+                <a href="../dns.html" class="related-link-card">
+                    <h4>🌐 DNS 配置</h4>
+                    <p>加密 DNS 与防污染指南</p>
+                </a>
+                <a href="../fake-ip.html" class="related-link-card">
+                    <h4>🎭 Fake‑IP 原理</h4>
+                    <p>了解虚拟 DNS 映射</p>
+                </a>
+                <a href="fake-ip-deep-dive.html" class="related-link-card">
+                    <h4>🔒 零 DNS 泄漏详解</h4>
+                    <p>Fake‑IP 深度解析</p>
+                </a>
+                <a href="../faq.html" class="related-link-card">
+                    <h4>❓ 常见问题</h4>
+                    <p>更多安装与使用疑难</p>
+                </a>
+                <a href="v2.5.2-highlights.html" class="related-link-card">
+                    <h4>📦 v2.5.2 新特性</h4>
+                    <p>连接面板与 Hysteria2</p>
+                </a>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="main-wrapper">
+            <p>&copy; 2026 Clash Verge Rev 官网下载中心. 所有技术内容基于社区公开文档，仅供学习与测试。请遵守当地法律法规。</p>
+        </div>
+    </footer>
+
+</body>
+</html>
