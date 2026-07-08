@@ -11,30 +11,726 @@
     <link rel="canonical" href="https://classhvverge.org/">
     <link rel="preload" href="./index2.css" as="style">
     <link rel="stylesheet" href="./index2.css">
-    <!-- <script type="application/ld+json">
+    <!-- 结构化数据：列表文章 -->
+    <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "WebPage",
-      "name": "Clash 内核演进与多平台客户端网络调优指南",
-      "description": "提供通用网络代理内核 Clash 的原理解析、各平台图形化客户端的下载指化与多场景流量控制教程。",
-      "breadcrumb": {
-        "@type": "BreadcrumbList",
-        "itemListElement": [{
+      "@type": "ItemList",
+      "itemListElement": [
+        {
           "@type": "ListItem",
           "position": 1,
-          "name": "主页",
-          "item": "https://classhvverge.org/"
-        }]
-      },
-      "mainEntity": {
-        "@type": "SoftwareApplication",
-        "name": "Clash Kernel",
-        "applicationCategory": "NetworkSoftware",
-        "operatingSystem": "Windows, macOS, Linux, Android, iOS"
-      }
+          "item": {
+            "@type": "BlogPosting",
+            "headline": "用 Rule Provider 管理万条规则，配置清爽100倍",
+            "url": "https://classhvverge.org/articles/rule-provider-guide",
+            "datePublished": "2026-07-08",
+            "description": "通过 rule-provider 远程加载规则集，告别臃肿的主配置文件。"
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "item": {
+            "@type": "BlogPosting",
+            "headline": "Clash Verge Rev 如何实现零 DNS 泄漏？一文看懂 Fake‑IP",
+            "url": "https://classhvverge.org/articles/fake-ip-deep-dive",
+            "datePublished": "2026-07-08",
+            "description": "Fake‑IP 原理深度分析，配合 TUN 模式杜绝本地 DNS 泄漏。"
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "item": {
+            "@type": "BlogPosting",
+            "headline": "v2.5.2 新特性：Hysteria2 协议支持与连接面板",
+            "url": "https://classhvverge.org/articles/v2.5.2-highlights",
+            "datePublished": "2026-07-08",
+            "description": "最新版带来 Hysteria2 协议，高延迟网络下速度提升明显。"
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 4,
+          "item": {
+            "@type": "BlogPosting",
+            "headline": "TUN 模式断网？可能是 DNS 劫持冲突",
+            "url": "https://classhvverge.org/articles/tun-no-internet-fix",
+            "datePublished": "2026-07-08",
+            "description": "开启 TUN 后无法上网的排查与解决方案。"
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 5,
+          "item": {
+            "@type": "BlogPosting",
+            "headline": "5 款超好用的在线 DNS 检测工具",
+            "url": "https://classhvverge.org/articles/dns-leak-tools",
+            "datePublished": "2026-07-08",
+            "description": "横向对比 dnsleaktest、ipleak、whoer 等工具。"
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 6,
+          "item": {
+            "@type": "BlogPosting",
+            "headline": "从零开始：Ubuntu 部署 Clash Verge Rev 实现全局透明代理",
+            "url": "https://classhvverge.org/articles/ubuntu-clash-verge-setup",
+            "datePublished": "2026-07-08",
+            "description": "手把手教你用 AppImage 安装并配置 TUN 模式。"
+          }
+        }
+      ]
     }
     </script>
-    -->
+    <style>
+        :root {
+            --brand-dark: #0f172a;
+            --brand-blue: #3b82f6;
+            --brand-blue-hover: #2563eb;
+            --text-main: #334155;
+            --text-title: #1e293b;
+            --bg-light: #ffffff;
+            --bg-accent: #f8fafc;
+            --border-line: #cbd5e1;
+            --page-card-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+            --page-card-shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.1);
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            color: var(--text-main);
+            line-height: 1.75;
+            background-color: var(--bg-light);
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem 6%;
+            background: var(--brand-dark);
+            color: #ffffff;
+            position: sticky;
+            top: 0;
+            z-index: 2000;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #ffffff;
+            text-decoration: none;
+            flex-shrink: 0;
+        }
+        .logo img {
+            width: auto;
+            height: 38px;
+            margin-right: 12px;
+            display: block;
+        }
+        .nav-box {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+        nav {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+        }
+        nav a {
+            margin-left: 0.5rem;
+            text-decoration: none;
+            color: #cbd5e1;
+            font-size: 0.93rem;
+            transition: color 0.2s;
+            white-space: nowrap;
+            padding: 0.25rem 0.35rem;
+            border-radius: 4px;
+        }
+        nav a:hover {
+            color: var(--brand-blue);
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        nav a.nav-doc-link {
+            font-weight: 500;
+            color: #e2e8f0;
+        }
+        .github-btn {
+            display: inline-flex;
+            align-items: center;
+            background-color: var(--brand-blue);
+            color: #ffffff;
+            padding: 0.55rem 1.1rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            text-decoration: none;
+            margin-left: 1.5rem;
+            transition: background-color 0.2s;
+            font-weight: 500;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .github-btn:hover {
+            background-color: var(--brand-blue-hover);
+        }
+        .github-btn svg {
+            width: 16px;
+            height: 16px;
+            margin-right: 6px;
+            fill: currentColor;
+        }
+        .main-wrapper {
+            max-width: 1260px;
+            margin: 0 auto;
+            padding: 0 6%;
+        }
+        .hero-block {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            padding: 5rem 0 3.5rem 0;
+        }
+        .hero-block h1 {
+            font-size: 2.8rem;
+            color: var(--brand-dark);
+            line-height: 1.25;
+            max-width: 900px;
+            margin-bottom: 1.5rem;
+        }
+        .hero-block p {
+            font-size: 1.15rem;
+            color: #64748b;
+            max-width: 750px;
+            margin-bottom: 2.5rem;
+        }
+        .multimedia-slot {
+            width: 100%;
+            max-width: 1000px;
+            height: 550px;
+            background-color: #f1f5f9;
+            border: 2px dashed #94a3b8;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .multimedia-slot img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 1;
+            z-index: 1;
+        }
+        .multimedia-slot::after {
+            content: "首页核心架构与分流原理演示主图 [1200x700 预留位]";
+            color: #64748b;
+            font-size: 0.95rem;
+            z-index: 0;
+            position: relative;
+        }
+
+        /* ========== 页面文档导航区域 ========== */
+        .page-directory-section {
+            padding: 4rem 0 5rem 0;
+            border-top: 1px solid #e2e8f0;
+        }
+        .page-directory-section .section-title {
+            font-size: 2rem;
+            margin-bottom: 0.75rem;
+        }
+        .page-directory-section .section-subtitle {
+            margin-bottom: 2.5rem;
+            font-size: 0.98rem;
+        }
+        .page-directory-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.15rem;
+        }
+        .page-card {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.85rem;
+            background: #ffffff;
+            border: 1px solid var(--border-line);
+            border-left: 4px solid var(--brand-dark);
+            border-radius: 8px;
+            padding: 1.25rem 1.1rem;
+            text-decoration: none;
+            color: var(--text-main);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-left-color 0.2s;
+            box-shadow: var(--page-card-shadow);
+            position: relative;
+        }
+        .page-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--page-card-shadow-hover);
+            border-left-color: var(--brand-blue);
+        }
+        .page-card--current {
+            background: #f8fafc;
+            border-left-color: var(--brand-blue);
+            cursor: default;
+            pointer-events: none;
+        }
+        .page-card--current:hover {
+            transform: none;
+            box-shadow: var(--page-card-shadow);
+            border-left-color: var(--brand-blue);
+        }
+        .page-card__icon {
+            font-size: 1.5rem;
+            flex-shrink: 0;
+            line-height: 1;
+            margin-top: 2px;
+        }
+        .page-card__body {
+            flex: 1;
+            min-width: 0;
+        }
+        .page-card__title {
+            font-size: 1rem;
+            color: var(--brand-dark);
+            margin-bottom: 0.2rem;
+            font-weight: 600;
+            line-height: 1.3;
+        }
+        .page-card__desc {
+            font-size: 0.82rem;
+            color: #64748b;
+            line-height: 1.45;
+            margin: 0;
+        }
+        .page-card__badge {
+            position: absolute;
+            top: 8px;
+            right: 10px;
+            font-size: 0.7rem;
+            background: var(--brand-blue);
+            color: #ffffff;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 500;
+            letter-spacing: 0.02em;
+            white-space: nowrap;
+        }
+
+        /* ========== 下载区域引导横幅 ========== */
+        .download-guide-banner {
+            text-align: center;
+            margin-top: 2rem;
+            padding: 1rem 1.5rem;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 0.93rem;
+            color: #475569;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .download-guide-banner a {
+            color: var(--brand-blue);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        .download-guide-banner a:hover {
+            color: var(--brand-blue-hover);
+            text-decoration: underline;
+        }
+        .guide-separator {
+            color: #cbd5e1;
+            margin: 0 0.25rem;
+            user-select: none;
+        }
+
+        .section-title {
+            font-size: 2.2rem;
+            color: var(--brand-dark);
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+        .section-subtitle {
+            text-align: center;
+            max-width: 750px;
+            margin: 0 auto 3.5rem auto;
+            color: #64748b;
+            font-size: 1rem;
+        }
+        .download-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1.75rem;
+            margin-bottom: 1rem;
+        }
+        .download-item {
+            background: #ffffff;
+            border: 1px solid var(--border-line);
+            border-top: 4px solid var(--brand-dark);
+            border-radius: 8px;
+            padding: 2.5rem 1.5rem;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .download-item:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+        }
+        .download-item h3 {
+            font-size: 1.5rem;
+            color: var(--brand-dark);
+            margin-bottom: 0.5rem;
+        }
+        .download-item .platform-spec {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-bottom: 2rem;
+        }
+        .actions-area {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+        .action-main-link {
+            display: block;
+            background-color: var(--brand-dark);
+            color: #ffffff;
+            padding: 0.8rem 1rem;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: background-color 0.2s;
+        }
+        .action-main-link:hover {
+            background-color: var(--brand-blue-hover);
+        }
+        .action-sub-link {
+            display: block;
+            background-color: #ffffff;
+            color: #475569;
+            padding: 0.7rem 1rem;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            border: 1px solid var(--border-line);
+            transition: all 0.2s;
+        }
+        .action-sub-link:hover {
+            background-color: #f1f5f9;
+            color: var(--brand-dark);
+            border-color: #94a3b8;
+        }
+        .split-layout {
+            display: grid;
+            grid-template-columns: 5fr 7fr;
+            gap: 4rem;
+            align-items: start;
+        }
+        .asymmetric-card {
+            background: #0f172a;
+            color: #f8fafc;
+            padding: 3rem;
+            border-radius: 12px;
+        }
+        .asymmetric-card h3 {
+            font-size: 1.6rem;
+            margin-bottom: 1.25rem;
+            color: #ffffff;
+        }
+        .asymmetric-card p {
+            color: #94a3b8;
+            font-size: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .text-nodes h3 {
+            font-size: 1.4rem;
+            color: var(--brand-dark);
+            margin-top: 2rem;
+            margin-bottom: 0.75rem;
+        }
+        .text-nodes p {
+            color: var(--text-main);
+            margin-bottom: 1.5rem;
+        }
+        .feature-flow {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 2rem;
+        }
+        .flow-node {
+            background: var(--bg-accent);
+            border-left: 4px solid var(--brand-blue);
+            padding: 2rem;
+            border-radius: 0 8px 8px 0;
+        }
+        .flow-node h3 {
+            font-size: 1.3rem;
+            color: var(--brand-dark);
+            margin-bottom: 0.75rem;
+        }
+        .flow-node p {
+            font-size: 0.95rem;
+        }
+        .lexicon-box {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem 4rem;
+        }
+        .lexicon-item h3 {
+            font-size: 1.25rem;
+            color: var(--brand-dark);
+            margin-bottom: 0.75rem;
+            border-bottom: 2px solid var(--brand-blue);
+            display: inline-block;
+            padding-bottom: 2px;
+        }
+        .lexicon-item p {
+            font-size: 0.95rem;
+            color: #475569;
+        }
+        .lexicon-item ul {
+            list-style-type: square;
+            padding-left: 1.25rem;
+            margin-top: 0.5rem;
+            color: #475569;
+            font-size: 0.95rem;
+        }
+        .lexicon-item ul li {
+            margin-bottom: 0.4rem;
+        }
+        section {
+            padding: 5rem 0;
+        }
+        .bg-section {
+            background-color: var(--bg-accent);
+            border-top: 1px solid #e2e8f0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        footer {
+            background: #020617;
+            color: #94a3b8;
+            padding: 4rem 6%;
+            text-align: center;
+            font-size: 0.9rem;
+            border-top: 1px solid #1e293b;
+        }
+
+        /* ========== 文章更新区域样式 ========== */
+        .section-header-flex {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        .view-all-link {
+            color: var(--brand-blue);
+            text-decoration: none;
+            font-weight: 500;
+            white-space: nowrap;
+            font-size: 1rem;
+        }
+        .view-all-link:hover {
+            text-decoration: underline;
+        }
+        .articles-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.75rem;
+            margin-top: 2rem;
+        }
+        .article-card {
+            background: #ffffff;
+            border: 1px solid var(--border-line);
+            border-radius: 12px;
+            padding: 1.75rem;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: var(--page-card-shadow);
+        }
+        .article-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--page-card-shadow-hover);
+        }
+        .article-date {
+            font-size: 0.8rem;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.75rem;
+        }
+        .article-tag {
+            display: inline-block;
+            background: #e0f2fe;
+            color: #0369a1;
+            padding: 0.15rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            align-self: flex-start;
+        }
+        .article-card h3 {
+            font-size: 1.25rem;
+            color: var(--brand-dark);
+            margin-bottom: 0.5rem;
+            line-height: 1.4;
+        }
+        .article-card p {
+            font-size: 0.95rem;
+            color: #475569;
+            flex: 1;
+            margin-bottom: 1.25rem;
+        }
+        .article-readmore {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-weight: 600;
+            color: var(--brand-blue);
+            text-decoration: none;
+            font-size: 0.9rem;
+            margin-top: auto;
+        }
+        .article-readmore:hover {
+            text-decoration: underline;
+        }
+
+        /* ========== 响应式设计 ========== */
+        @media (max-width: 1100px) {
+            .page-directory-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 1rem;
+            }
+            .page-card {
+                padding: 1.1rem 0.9rem;
+            }
+            .page-card__title {
+                font-size: 0.95rem;
+            }
+            .page-card__desc {
+                font-size: 0.78rem;
+            }
+            .articles-grid {
+                grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            }
+        }
+        @media (max-width: 960px) {
+            header {
+                flex-direction: column;
+                gap: 1rem;
+                padding: 1.25rem 5%;
+            }
+            .nav-box {
+                flex-direction: column;
+                gap: 1rem;
+                width: 100%;
+                align-items: center;
+            }
+            nav {
+                display: flex;
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 0.4rem;
+            }
+            nav a {
+                margin: 0 0.3rem;
+                font-size: 0.88rem;
+            }
+            .github-btn {
+                margin-left: 0;
+            }
+            .page-directory-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.9rem;
+            }
+            .page-card__badge {
+                font-size: 0.65rem;
+                top: 6px;
+                right: 6px;
+                padding: 2px 6px;
+            }
+            .split-layout {
+                grid-template-columns: 1fr;
+                gap: 2.5rem;
+            }
+            .lexicon-box {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+            .download-guide-banner {
+                flex-direction: column;
+                gap: 0.3rem;
+                padding: 0.9rem 1rem;
+                font-size: 0.88rem;
+            }
+            .guide-separator {
+                display: none;
+            }
+        }
+        @media (max-width: 600px) {
+            .page-directory-grid {
+                grid-template-columns: 1fr;
+                gap: 0.7rem;
+            }
+            .page-card {
+                padding: 1rem 0.85rem;
+                gap: 0.7rem;
+            }
+            .page-card__icon {
+                font-size: 1.3rem;
+            }
+            .page-card__title {
+                font-size: 0.93rem;
+            }
+            .page-card__desc {
+                font-size: 0.8rem;
+            }
+            .page-directory-section {
+                padding: 2.5rem 0 3.5rem 0;
+            }
+            .page-directory-section .section-title {
+                font-size: 1.6rem;
+            }
+            .hero-block h1 {
+                font-size: 1.9rem;
+            }
+            .hero-block p {
+                font-size: 1rem;
+            }
+            .articles-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
 <body>
 
@@ -257,6 +953,19 @@
         </div>
     </section>
 
+    <!-- 最新文章区域 -->
+    <section id="latest-articles" class="main-wrapper">
+        <div class="section-header-flex">
+            <h2 class="section-title" style="text-align: left; margin-bottom: 0.5rem;">📰 最新教程与动态</h2>
+            <a href="/articles" class="view-all-link">查看全部文章 →</a>
+        </div>
+        <p class="section-subtitle" style="text-align: left; margin-bottom: 0;">技术干货、更新解读、配置技巧，持续更新中。</p>
+
+        <div class="articles-grid" id="articlesContainer">
+            <!-- 文章卡片通过JavaScript动态渲染 -->
+        </div>
+    </section>
+
     <main class="main-wrapper">
 
         <section id="technical-terms">
@@ -303,6 +1012,7 @@
 
     <script>
         document.addEventListener("DOMContentLoaded", function() {
+            // 导航平滑滚动
             const anchorLinks = document.querySelectorAll('nav a[href^="#"]');
             for (const anchor of anchorLinks) {
                 anchor.addEventListener("click", function(event) {
@@ -316,6 +1026,65 @@
                         });
                     }
                 });
+            }
+
+            // 文章数据（修改此数组即可更新首页文章）
+            const articles = [
+                {
+                    date: "2026-07-08",
+                    tag: "配置技巧",
+                    title: "用 Rule Provider 管理万条规则，配置清爽100倍",
+                    excerpt: "还在手动维护上千条分流规则？教你通过 rule-provider 远程加载规则集，自动更新，主配置仅需几行代码。",
+                    link: "/articles/rule-provider-guide"
+                },
+                {
+                    date: "2026-07-08",
+                    tag: "安全加固",
+                    title: "Clash Verge Rev 如何实现零 DNS 泄漏？一文看懂 Fake‑IP",
+                    excerpt: "深入解析 Fake‑IP 的映射机制，配合 TUN 模式，让你的 DNS 查询彻底对本地网络隐身。",
+                    link: "/articles/fake-ip-deep-dive"
+                },
+                {
+                    date: "2026-07-08",
+                    tag: "版本解读",
+                    title: "v2.5.2 新特性：Hysteria2 协议支持与连接面板",
+                    excerpt: "最新版带来 Hysteria2 协议支持，高延迟网络下速度提升明显，新的连接状态面板让调试不再抓瞎。",
+                    link: "/articles/v2.5.2-highlights"
+                },
+                {
+                    date: "2026-07-08",
+                    tag: "疑难解答",
+                    title: "TUN 模式断网？可能是 DNS 劫持冲突",
+                    excerpt: "开启 TUN 后无法上网的常见原因之一是 DNS 被本地防火墙或其它代理篡改，三步排查法帮你解决。",
+                    link: "/articles/tun-no-internet-fix"
+                },
+                {
+                    date: "2026-07-08",
+                    tag: "工具推荐",
+                    title: "5 款超好用的在线 DNS 检测工具",
+                    excerpt: "dnsleaktest、ipleak、whoer 等工具横向对比，助你精准判断代理是否泄漏真实 IP 和 DNS。",
+                    link: "/articles/dns-leak-tools"
+                },
+                {
+                    date: "2026-07-08",
+                    tag: "上手教程",
+                    title: "从零开始：在 Ubuntu 上部署 Clash Verge Rev 实现全局透明代理",
+                    excerpt: "手把手教你用 AppImage 安装，配置 TUN 模式并设置开机自启，让 Linux 设备秒变代理网关。",
+                    link: "/articles/ubuntu-clash-verge-setup"
+                }
+            ];
+
+            const container = document.getElementById('articlesContainer');
+            if (container) {
+                container.innerHTML = articles.map(article => `
+                    <article class="article-card">
+                        <div class="article-date">${article.date}</div>
+                        <span class="article-tag">${article.tag}</span>
+                        <h3>${article.title}</h3>
+                        <p>${article.excerpt}</p>
+                        <a href="${article.link}" class="article-readmore">阅读全文 →</a>
+                    </article>
+                `).join('');
             }
         });
     </script>
