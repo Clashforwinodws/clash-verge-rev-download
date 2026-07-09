@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>进阶：自定义 Mihomo 内核编译与插件开发 · Clash Verge Rev 深度扩展</title>
+    <meta name="description" content="解锁 Clash Verge Rev 的终极自定义能力：手把手带你使用 Rust 编写 Mihomo 内核插件，实现流量修改、自定义认证与规则注入。从环境搭建到编译部署，深入内核扩展点，让代理行为完全按照你的意愿运行。">
+    <meta name="keywords" content="Mihomo 插件开发, Rust 代理内核, Clash Verge Rev 插件, 自定义代理逻辑, 流量处理模块, 内核编译, 代理扩展">
+    <link rel="icon" type="image/x-icon" href="../favicon.ico">
+    <link rel="shortcut icon" type="image/x-icon" href="../favicon.ico">
+    <link rel="canonical" href="https://classhvverge.org/articles/mihomo-plugin-dev.html">
+    <link rel="stylesheet" href="../index2.css">
+    <!-- 结构化数据：TechArticle -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "TechArticle",
+      "headline": "进阶：自定义 Mihomo 内核编译与插件开发",
+      "description": "解锁 Clash Verge Rev 的终极自定义能力：手把手带你使用 Rust 编写 Mihomo 内核插件，实现流量修改、自定义认证与规则注入。从环境搭建到编译部署，深入内核扩展点，让代理行为完全按照你的意愿运行。",
+      "author": { "@type": "Organization", "name": "Clash Verge Rev 社区" },
+      "datePublished": "2026-07-09",
+      "dateModified": "2026-07-09",
+      "mainEntityOfPage": { "@type": "WebPage", "@id": "https://classhvverge.org/articles/mihomo-plugin-dev.html" }
+    }
+    </script>
+    <style>
+        :root {
+            --brand-dark: #0f172a;
+            --brand-blue: #3b82f6;
+            --brand-blue-hover: #2563eb;
+            --text-main: #334155;
+            --text-title: #1e293b;
+            --bg-light: #ffffff;
+            --bg-accent: #f8fafc;
+            --border-line: #cbd5e1;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+            --shadow-md: 0 8px 24px rgba(0,0,0,0.1);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            color: var(--text-main);
+            line-height: 1.75;
+            background-color: var(--bg-light);
+        }
+
+        /* 导航栏（与其他文章一致） */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem 6%;
+            background: var(--brand-dark);
+            color: #ffffff;
+            position: sticky;
+            top: 0;
+            z-index: 2000;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #ffffff;
+            text-decoration: none;
+            flex-shrink: 0;
+        }
+        .logo img { width: auto; height: 38px; margin-right: 12px; display: block; }
+        .nav-box { display: flex; align-items: center; flex-wrap: wrap; gap: 0.75rem; }
+        nav { display: flex; align-items: center; flex-wrap: wrap; gap: 0.35rem; }
+        nav a {
+            margin-left: 0.5rem;
+            text-decoration: none;
+            color: #cbd5e1;
+            font-size: 0.93rem;
+            transition: color 0.2s;
+            white-space: nowrap;
+            padding: 0.25rem 0.35rem;
+            border-radius: 4px;
+        }
+        nav a:hover { color: var(--brand-blue); background-color: rgba(255,255,255,0.05); }
+        nav a.nav-active { color: var(--brand-blue); font-weight: 600; background-color: rgba(59,130,246,0.1); }
+        .github-btn {
+            display: inline-flex;
+            align-items: center;
+            background-color: var(--brand-blue);
+            color: #ffffff;
+            padding: 0.55rem 1.1rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            text-decoration: none;
+            margin-left: 1.5rem;
+            transition: background-color 0.2s;
+            font-weight: 500;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .github-btn:hover { background-color: var(--brand-blue-hover); }
+        .github-btn svg { width: 16px; height: 16px; margin-right: 6px; fill: currentColor; }
+
+        .article-wrapper { max-width: 860px; margin: 0 auto; padding: 3rem 6%; }
+        .article-header { text-align: center; padding: 3rem 0 2rem; }
+        .article-header h1 { font-size: 2.5rem; color: var(--brand-dark); margin-bottom: 1rem; line-height: 1.3; }
+        .article-meta {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            color: #64748b;
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+        .article-meta span { display: flex; align-items: center; gap: 0.3rem; }
+        .featured-image {
+            width: 100%; height: 320px;
+            background: #f1f5f9;
+            border: 2px dashed #94a3b8;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+            font-size: 0.95rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .article-content h2 {
+            font-size: 1.9rem;
+            color: var(--brand-dark);
+            margin: 2.5rem 0 1rem;
+            border-left: 5px solid var(--brand-blue);
+            padding-left: 1rem;
+        }
+        .article-content h3 {
+            font-size: 1.5rem;
+            color: var(--text-title);
+            margin: 2rem 0 0.8rem;
+        }
+        .article-content p { margin-bottom: 1.2rem; font-size: 1.05rem; color: #334155; }
+        .code-block {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 1.5rem;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            margin: 1.5rem 0;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        .code-block .key { color: #93c5fd; }
+        .code-block .value { color: #fbbf24; }
+        .code-block .comment { color: #94a3b8; }
+        .tip-box {
+            background: #f0f9ff;
+            border-left: 5px solid var(--brand-blue);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+        }
+        .tip-box strong { color: #0f172a; }
+        .info-box {
+            background: #fff7ed;
+            border-left: 5px solid #f97316;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+        }
+        .info-box strong { color: #7c2d12; }
+
+        .steps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+        .step-card {
+            background: #fff;
+            border: 1px solid var(--border-line);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.2s;
+        }
+        .step-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+        .step-number {
+            display: inline-block;
+            width: 2.5rem;
+            height: 2.5rem;
+            background: var(--brand-dark);
+            color: #fff;
+            border-radius: 50%;
+            line-height: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.8rem;
+        }
+        .step-card h4 { margin-bottom: 0.5rem; color: var(--brand-dark); }
+        .step-card p { font-size: 0.9rem; color: #475569; }
+
+        .related-links {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+        .related-link-card {
+            background: #fff;
+            border: 1px solid var(--border-line);
+            border-radius: 10px;
+            padding: 1.2rem;
+            text-decoration: none;
+            color: var(--text-main);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .related-link-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+        .related-link-card h4 { font-size: 1.1rem; color: var(--brand-dark); margin-bottom: 0.3rem; }
+        .related-link-card p { font-size: 0.85rem; color: #64748b; }
+
+        .table-of-contents {
+            background: #f8fafc;
+            border: 1px solid var(--border-line);
+            border-radius: 10px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 2rem;
+        }
+        .table-of-contents h3 { margin-bottom: 0.8rem; font-size: 1.2rem; color: var(--brand-dark); }
+        .table-of-contents ul { list-style: none; columns: 2; column-gap: 2rem; }
+        .table-of-contents li { margin-bottom: 0.4rem; }
+        .table-of-contents a { color: var(--brand-blue); text-decoration: none; font-weight: 500; }
+        .table-of-contents a:hover { text-decoration: underline; }
+
+        footer {
+            background: #020617;
+            color: #94a3b8;
+            padding: 4rem 6%;
+            text-align: center;
+            font-size: 0.9rem;
+            border-top: 1px solid #1e293b;
+            margin-top: 3rem;
+        }
+
+        @media (max-width: 768px) {
+            header { flex-direction: column; gap: 1rem; padding: 1.25rem 5%; }
+            .nav-box { flex-direction: column; gap: 1rem; width: 100%; align-items: center; }
+            nav { justify-content: center; flex-wrap: wrap; gap: 0.4rem; }
+            nav a { margin: 0 0.3rem; font-size: 0.88rem; }
+            .github-btn { margin-left: 0; }
+            .article-header h1 { font-size: 1.9rem; }
+            .table-of-contents ul { columns: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="../index.html" class="logo">
+            <img src="../logo.webp" alt="Clash verge rev 官网" width="160" height="38">
+            <span>Clash Verge 官网</span>
+        </a>
+        <div class="nav-box">
+            <nav>
+                <a href="../download.html">客户端下载</a>
+                <a href="../install.html">安装教程</a>
+                <a href="../configuration.html">配置教程</a>
+                <a href="../faq.html">常见问题</a>
+                <a href="../changelog.html">更新日志</a>
+                <a href="index.html" class="nav-active">文章中心</a>
+                <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/wiki">📚 文档</a>
+            </nav>
+            <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/" class="github-btn" target="_blank" rel="noopener noreferrer">
+                <svg viewBox="0 0 16 16" version="1.1" aria-hidden="true"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+                GitHub 仓库
+            </a>
+        </div>
+    </header>
+
+    <main class="article-wrapper">
+        <article>
+            <div class="article-header">
+                <h1>进阶：自定义 Mihomo 内核编译与插件开发</h1>
+                <div class="article-meta">
+                    <span>📅 2026-07-09</span>
+                    <span>🏷️ 进阶开发</span>
+                    <span>⏱️ 阅读约 12 分钟</span>
+                </div>
+            </div>
+
+            <div class="featured-image">
+                [ Rust 与 Mihomo 内核插件架构示意图 ]
+            </div>
+
+            <div class="table-of-contents">
+                <h3>📑 本文目录</h3>
+                <ul>
+                    <li><a href="#why-plugin">1. 为什么要编写内核插件？</a></li>
+                    <li><a href="#arch">2. Mihomo 的插件架构</a></li>
+                    <li><a href="#env">3. 开发环境搭建</a></li>
+                    <li><a href="#first-plugin">4. 第一个插件：流量日志注入</a></li>
+                    <li><a href="#custom-auth">5. 高级实战：自定义认证插件</a></li>
+                    <li><a href="#deploy">6. 编译、部署与调试</a></li>
+                    <li><a href="#pitfalls">7. 常见陷阱与最佳实践</a></li>
+                </ul>
+            </div>
+
+            <div class="article-content">
+                <h2 id="why-plugin">🔧 为什么要编写内核插件？</h2>
+                <p>Clash Verge Rev 提供的规则引擎和策略组已经能应对大多数需求，但在某些高级场景下，你可能需要更底层的控制：比如在流量进入代理之前动态修改请求头、为特定应用注入认证令牌、或者实现私有加密协议。Mihomo 内核（即 Clash Meta）的 <strong>插件系统</strong> 正是为这些需求而生。它基于 Rust 的 trait 接口，允许开发者以安全、高性能的方式扩展内核功能，而无需修改核心代码。</p>
+                <p>通过编写插件，你可以将定制逻辑编译为动态链接库（.so/.dylib）或直接静态编译进内核，运行在 Clash Verge Rev 的底层。这意味着你不仅能定义“如何代理”，更能定义“代理之前发生了什么”。如果你已经阅读过 <a href="../mihomo.html" target="_blank">Mihomo 内核全景解读</a>，那么接下来就是亲手挖掘其扩展能力的时候了。</p>
+                <div class="tip-box">
+                    <strong>💡 前置知识：</strong> 本文假定你已具备基本的 Rust 编程经验，了解 Cargo 包管理器，并熟悉 Clash Verge Rev 的基础配置（参考 <a href="../configuration.html" target="_blank">配置教程</a>）。
+                </div>
+
+                <h2 id="arch">🧬 Mihomo 的插件架构</h2>
+                <p>Mihomo 内核定义了一系列以 <code>Plugin</code> 为核心的 trait，常见扩展点包括：</p>
+                <ul style="margin: 1rem 0 1.5rem 1.5rem;">
+                    <li><strong>OnRequest</strong>：在代理请求发出前调用，可修改目标地址、添加头部。</li>
+                    <li><strong>OnResponse</strong>：收到响应后调用，用于日志记录或内容过滤。</li>
+                    <li><strong>Authenticator</strong>：实现自定义认证逻辑，替代简单的用户名密码验证。</li>
+                    <li><strong>Transport</strong>：注册自定义传输协议，让内核支持非标准代理方式。</li>
+                </ul>
+                <p>插件以独立的 Rust crate 形式存在，通过 <code>mihomo-plugin</code> 提供的 SDK 与内核通信。SDK 封装了异步运行时（Tokio）和必要的网络原语，确保插件不会阻塞主代理循环。这种设计与 <a href="../rule.html" target="_blank">Rule 模式</a> 的规则引擎互不冲突，插件在规则匹配之前执行，可以看作是流量进入代理系统的第一道关卡。</p>
+
+                <h2 id="env">🛠️ 开发环境搭建</h2>
+                <p>首先确保你已安装 Rust 工具链（推荐通过 <a href="https://rustup.rs" target="_blank" rel="noopener">rustup</a> 安装）。然后创建一个新的库项目：</p>
+                <div class="code-block">
+<span class="comment"># 创建 Rust 库项目</span>
+<span class="value">cargo new --lib mihomo-custom-plugin</span>
+<span class="value">cd mihomo-custom-plugin</span>
+                </div>
+                <p>编辑 <code>Cargo.toml</code>，添加 Mihomo SDK 和 Tokio 依赖（假设 SDK crate 名为 <code>mihomo-plugin</code>，实际名称请查阅官方文档）：</p>
+                <div class="code-block">
+<span class="key">[package]</span>
+<span class="key">name</span> = <span class="value">"mihomo-custom-plugin"</span>
+<span class="key">version</span> = <span class="value">"0.1.0"</span>
+<span class="key">edition</span> = <span class="value">"2021"</span>
+
+<span class="key">[lib]</span>
+<span class="key">crate-type</span> = <span class="value">["cdylib"]</span>   <span class="comment"># 编译为动态库</span>
+
+<span class="key">[dependencies]</span>
+<span class="key">mihomo-plugin</span> = <span class="value">"0.3"</span>
+<span class="key">tokio</span> = <span class="value">{ version = "1", features = ["full"] }</span>
+<span class="key">tracing</span> = <span class="value">"0.1"</span>            <span class="comment"># 日志记录</span>
+                </div>
+                <div class="info-box">
+                    <strong>⚠️ 注意：</strong> 由于 Mihomo 内核目前尚未完全稳定其 SDK 的公共 API，建议查看 <a href="https://github.com/Clashforwinodws/clash-verge-rev-download" target="_blank" rel="noopener">GitHub 仓库</a> 的最新源码以获取准确的 crate 名称和版本。
+                </div>
+
+                <h2 id="first-plugin">📝 第一个插件：流量日志注入</h2>
+                <p>我们从最简单的场景入手：编写一个插件，每当有代理请求发出时，将目标域名和策略组名称输出到日志。在 <code>src/lib.rs</code> 中：</p>
+                <div class="code-block">
+<span class="key">use</span> mihomo_plugin::<span class="value">prelude::*</span>;
+<span class="key">use</span> tracing::<span class="value">info</span>;
+
+<span class="comment">// 定义插件结构体</span>
+<span class="key">pub struct</span> <span class="value">TrafficLogger</span>;
+
+<span class="comment">// 实现 Plugin trait</span>
+<span class="key">impl</span> Plugin <span class="key">for</span> TrafficLogger {
+    <span class="key">fn</span> <span class="value">name</span>(&self) -> &'static <span class="key">str</span> {
+        <span class="value">"traffic-logger"</span>
+    }
+
+    <span class="key">fn</span> <span class="value">on_request</span>(&self, req: &<span class="key">mut</span> ProxyRequest) -> PluginResult<()> {
+        <span class="value">info!</span>(
+            <span class="value">"请求: {} -> 策略组: {}"</span>,
+            req.destination.hostname,
+            req.policy_group
+        );
+        <span class="key">Ok</span>(())
+    }
+}
+
+<span class="comment">// 导出插件注册函数</span>
+<span class="key">#[no_mangle]</span>
+<span class="key">pub extern</span> <span class="value">"C"</span> <span class="key">fn</span> <span class="value">mihomo_plugin_init</span>() -> <span class="key">Box</span>&lt;<span class="key">dyn</span> Plugin&gt; {
+    <span class="key">Box</span>::<span class="value">new</span>(TrafficLogger)
+}
+                </div>
+                <p>这个插件通过 <code>on_request</code> 钩子获取每个代理请求的目标域名和所命中的策略组，并通过 <code>tracing::info</code> 写入日志。编译后会生成一个 <code>.so</code> 文件，Mihomo 内核在启动时加载并调用 <code>mihomo_plugin_init</code> 进行注册。更多关于策略组的细节，可参考 <a href="../configuration.html" target="_blank">配置教程</a> 中的 proxy-groups 说明。</p>
+
+                <h2 id="custom-auth">🔐 高级实战：自定义认证插件</h2>
+                <p>假设你的代理节点需要使用动态 Token 认证，而 Token 通过外部 HTTP API 定期刷新。我们可以实现 <code>Authenticator</code> trait 来接管认证流程：</p>
+                <div class="code-block">
+<span class="key">use</span> mihomo_plugin::<span class="value">auth::Authenticator</span>;
+<span class="key">use</span> tokio::<span class="value">sync::Mutex</span>;
+<span class="key">use</span> std::<span class="value">sync::Arc</span>;
+
+<span class="key">pub struct</span> <span class="value">DynamicTokenAuth</span> {
+    <span class="comment">// 缓存 token，使用 Arc 和 Mutex 保证线程安全</span>
+    token_cache: <span class="key">Arc</span>&lt;<span class="key">Mutex</span>&lt;<span class="key">String</span>&gt;&gt;,
+}
+
+<span class="key">impl</span> DynamicTokenAuth {
+    <span class="key">pub fn</span> <span class="value">new</span>() -> <span class="key">Self</span> {
+        <span class="key">Self</span> {
+            token_cache: <span class="key">Arc</span>::<span class="value">new</span>(<span class="key">Mutex</span>::<span class="value">new</span>(<span class="key">String</span>::<span class="value">new</span>())),
+        }
+    }
+
+    <span class="comment">// 后台异步任务，定期刷新 token</span>
+    <span class="key">async fn</span> <span class="value">refresh_token</span>(cache: <span class="key">Arc</span>&lt;<span class="key">Mutex</span>&lt;<span class="key">String</span>&gt;&gt;) {
+        <span class="key">loop</span> {
+            <span class="comment">// 调用外部 API 获取新 token</span>
+            <span class="key">if let</span> <span class="value">Ok</span>(new_token) = <span class="value">fetch_token_from_api</span>().<span class="value">await</span> {
+                <span class="key">let mut</span> token = cache.<span class="value">lock</span>().<span class="value">await</span>;
+                *token = new_token;
+            }
+            <span class="comment">// 每 5 分钟刷新一次</span>
+            tokio::<span class="value">time</span>::<span class="value">sleep</span>(std::<span class="value">time</span>::<span class="value">Duration</span>::<span class="value">from_secs</span>(<span class="value">300</span>)).<span class="value">await</span>;
+        }
+    }
+}
+
+<span class="key">impl</span> Authenticator <span class="key">for</span> DynamicTokenAuth {
+    <span class="key">fn</span> <span class="value">authenticate</span>(&self, req: &<span class="key">mut</span> AuthRequest) -> PluginResult&lt;<span class="key">bool</span>&gt; {
+        <span class="comment">// 将最新的 token 注入到代理请求的头部</span>
+        <span class="key">let</span> token = self.token_cache.<span class="value">clone</span>();
+        <span class="key">let</span> token = <span class="value">tokio::task::block_in_place</span>(|| {
+            <span class="value">tokio::runtime::Handle::current().block_on</span>(<span class="key">async</span> {
+                token.<span class="value">lock</span>().<span class="value">await</span>.<span class="value">clone</span>()
+            })
+        });
+        req.<span class="value">headers</span>.<span class="value">insert</span>(
+            <span class="value">"Authorization"</span>.<span class="value">parse</span>().<span class="value">unwrap</span>(),
+            token.<span class="value">parse</span>().<span class="value">unwrap</span>()
+        );
+        <span class="key">Ok</span>(<span class="value">true</span>)
+    }
+}
+                </div>
+                <p>该插件在每次代理请求前都动态注入最新的授权头，完全替代了配置文件中静态的 <code>password</code> 字段。配合 <a href="../enable-tun.html" target="_blank">TUN 模式</a>，所有出站流量的认证都能自动保持最新。这对于需要频繁更新密钥的企业环境或自建节点非常实用。</p>
+                <div class="tip-box">
+                    <strong>🧠 线程安全提示：</strong> 在异步上下文中使用同步 <code>block_in_place</code> 是必要的，因为 Mihomo 的某些钩子可能运行在同步工作线程上。请根据实际 SDK 文档调整。
+                </div>
+
+                <h2 id="deploy">📦 编译、部署与调试</h2>
+                <div class="steps-grid">
+                    <div class="step-card">
+                        <div class="step-number">1</div>
+                        <h4>编译插件</h4>
+                        <p>执行 <code>cargo build --release</code>，在 <code>target/release/</code> 下得到 <code>.so</code> 或 <code>.dylib</code> 文件。</p>
+                    </div>
+                    <div class="step-card">
+                        <div class="step-number">2</div>
+                        <h4>配置内核</h4>
+                        <p>在配置文件 <code>plugin</code> 字段中指定插件路径：<code>plugin: ./libmy_plugin.so</code></p>
+                    </div>
+                    <div class="step-card">
+                        <div class="step-number">3</div>
+                        <h4>重启客户端</h4>
+                        <p>重新打开 Clash Verge Rev，查看日志确认插件已加载。</p>
+                    </div>
+                    <div class="step-card">
+                        <div class="step-number">4</div>
+                        <h4>调试与日志</h4>
+                        <p>通过 Clash 的日志面板或设置 <code>RUST_LOG=debug</code> 环境变量查看插件输出。</p>
+                    </div>
+                </div>
+                <p>如果插件未被加载，检查内核版本是否匹配 SDK 版本，以及文件权限是否正确。在 Linux 上，确保 <code>.so</code> 文件具有执行权限。你也可以将插件静态编译进内核，这需要修改 Mihomo 的源码并重新构建整个项目——具体流程可参考社区提供的构建脚本，或查阅 <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/wiki" target="_blank" rel="noopener">GitHub Wiki 文档</a>。</p>
+
+                <h2 id="pitfalls">⚠️ 常见陷阱与最佳实践</h2>
+                <ul style="margin: 1rem 0 1.5rem 1.5rem;">
+                    <li><strong>异步阻塞</strong>：切勿在插件钩子中执行长时间阻塞操作（如同步 HTTP 请求），必须使用 Tokio 异步客户端。否则会拖慢所有代理连接。</li>
+                    <li><strong>内存管理</strong>：插件以动态库形式加载，注意 <code>Box::leak</code> 等操作可能导致内存泄漏。推荐使用 <code>Arc</code> 共享状态。</li>
+                    <li><strong>版本兼容性</strong>：SDK 与内核之间没有稳定的 ABI，升级 Mihomo 后可能需要重新编译插件。关注 <a href="../changelog.html" target="_blank">更新日志</a> 中的 breaking changes。</li>
+                    <li><strong>安全边界</strong>：插件运行在内核进程中，拥有完全的网络访问权限。仅加载可信来源的插件，避免加载未知的 <code>.so</code> 文件。</li>
+                </ul>
+                <p>当遇到难以排查的问题时，可以先用 <code>tracing::debug</code> 在插件中输出详细上下文，结合 Clash Verge Rev 的连接面板（v2.5.2+ 支持，见 <a href="v2.5.2-highlights.html" target="_blank">版本新特性</a>）观察流量是否经过了插件处理。这样能快速定位是代码逻辑错误还是加载配置问题。</p>
+                <p>插件开发为你打开了自定义代理世界的无限可能。从简单的请求标记到全链路的传输层改造，Rust 的零成本抽象让这些操作不会牺牲代理本身的高性能。如果你想继续深入，推荐阅读 <a href="rule-provider-guide.html" target="_blank">Rule Provider 进阶</a> 和 <a href="fake-ip-deep-dive.html" target="_blank">Fake‑IP 原理</a>，理解内核的规则引擎和 DNS 系统如何与插件协同工作。</p>
+            </div>
+
+            <h3 style="font-size: 1.5rem; margin: 2.5rem 0 1rem;">📖 继续阅读</h3>
+            <div class="related-links">
+                <a href="../mihomo.html" class="related-link-card">
+                    <h4>🧬 Mihomo 内核解析</h4>
+                    <p>了解内核架构与特性</p>
+                </a>
+                <a href="../configuration.html" class="related-link-card">
+                    <h4>📘 配置教程</h4>
+                    <p>配置文件完全指南</p>
+                </a>
+                <a href="v2.5.2-highlights.html" class="related-link-card">
+                    <h4>📦 v2.5.2 新特性</h4>
+                    <p>连接面板与 Hysteria2</p>
+                </a>
+                <a href="../rule.html" class="related-link-card">
+                    <h4>📋 Rule 模式</h4>
+                    <p>规则引擎深度解析</p>
+                </a>
+                <a href="fake-ip-deep-dive.html" class="related-link-card">
+                    <h4>🎭 Fake‑IP 详解</h4>
+                    <p>零 DNS 泄漏原理</p>
+                </a>
+                <a href="../faq.html" class="related-link-card">
+                    <h4>❓ 常见问题</h4>
+                    <p>排查与使用技巧</p>
+                </a>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="main-wrapper">
+            <p>&copy; 2026 Clash Verge Rev 官网下载中心. 所有技术内容基于社区公开文档，仅供学习与测试。请遵守当地法律法规。</p>
+        </div>
+    </footer>
+
+</body>
+</html>
