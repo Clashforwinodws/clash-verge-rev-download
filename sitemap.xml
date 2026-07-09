@@ -144,4 +144,18 @@
         <changefreq>weekly</changefreq>
         <priority>0.6</priority>
     </url>
+
+         <url>
+        <loc>https://classhvverge.org/articles/mihomo-plugin-dev.html</loc>
+        <lastmod>2026-07-09</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.6</priority>
+    </url>
+
+             <url>
+        <loc>https://classhvverge.org/articles/multi-device-sync.html</loc>
+        <lastmod>2026-07-09</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.6</priority>
+    </url>
 </urlset>
