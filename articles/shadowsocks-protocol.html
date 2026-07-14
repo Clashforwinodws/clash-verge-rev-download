@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shadowsocks 协议深度解析 · 从加密原理到 Clash Verge Rev 实战配置</title>
+    <meta name="description" content="全面掌握 Shadowsocks 协议：详解 SOCKS5 代理转加密隧道的工作机制、AEAD 加密套件、obfs 混淆插件，以及在 Clash Verge Rev 中的节点配置、策略组优化与常见问题排查。让你的代理更安全、更快速。">
+    <meta name="keywords" content="Shadowsocks 协议, SS 加密原理, AEAD, Shadowsocks 配置, Clash Verge Rev Shadowsocks, 协议对比, 代理优化">
+    <link rel="icon" type="image/x-icon" href="../favicon.ico">
+    <link rel="shortcut icon" type="image/x-icon" href="../favicon.ico">
+    <link rel="canonical" href="https://classhvverge.org/articles/shadowsocks-protocol.html">
+    <link rel="stylesheet" href="../index2.css">
+    <!-- 结构化数据：TechArticle -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "TechArticle",
+      "headline": "Shadowsocks 协议深度解析：从加密原理到 Clash Verge Rev 实战配置",
+      "description": "全面掌握 Shadowsocks 协议：详解 SOCKS5 代理转加密隧道的工作机制、AEAD 加密套件、obfs 混淆插件，以及在 Clash Verge Rev 中的节点配置、策略组优化与常见问题排查。让你的代理更安全、更快速。",
+      "author": { "@type": "Organization", "name": "Clash Verge Rev 社区" },
+      "datePublished": "2026-07-14",
+      "dateModified": "2026-07-14",
+      "mainEntityOfPage": { "@type": "WebPage", "@id": "https://classhvverge.org/articles/shadowsocks-protocol.html" }
+    }
+    </script>
+    <style>
+        :root {
+            --brand-dark: #0f172a;
+            --brand-blue: #3b82f6;
+            --brand-blue-hover: #2563eb;
+            --text-main: #334155;
+            --text-title: #1e293b;
+            --bg-light: #ffffff;
+            --bg-accent: #f8fafc;
+            --border-line: #cbd5e1;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+            --shadow-md: 0 8px 24px rgba(0,0,0,0.1);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            color: var(--text-main);
+            line-height: 1.75;
+            background-color: var(--bg-light);
+        }
+
+        /* 导航栏（与文章中心一致） */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem 6%;
+            background: var(--brand-dark);
+            color: #ffffff;
+            position: sticky;
+            top: 0;
+            z-index: 2000;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #ffffff;
+            text-decoration: none;
+            flex-shrink: 0;
+        }
+        .logo img { width: auto; height: 38px; margin-right: 12px; display: block; }
+        .nav-box { display: flex; align-items: center; flex-wrap: wrap; gap: 0.75rem; }
+        nav { display: flex; align-items: center; flex-wrap: wrap; gap: 0.35rem; }
+        nav a {
+            margin-left: 0.5rem;
+            text-decoration: none;
+            color: #cbd5e1;
+            font-size: 0.93rem;
+            transition: color 0.2s;
+            white-space: nowrap;
+            padding: 0.25rem 0.35rem;
+            border-radius: 4px;
+        }
+        nav a:hover { color: var(--brand-blue); background-color: rgba(255,255,255,0.05); }
+        nav a.nav-active { color: var(--brand-blue); font-weight: 600; background-color: rgba(59,130,246,0.1); }
+        .github-btn {
+            display: inline-flex;
+            align-items: center;
+            background-color: var(--brand-blue);
+            color: #ffffff;
+            padding: 0.55rem 1.1rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            text-decoration: none;
+            margin-left: 1.5rem;
+            transition: background-color 0.2s;
+            font-weight: 500;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .github-btn:hover { background-color: var(--brand-blue-hover); }
+        .github-btn svg { width: 16px; height: 16px; margin-right: 6px; fill: currentColor; }
+
+        .article-wrapper { max-width: 860px; margin: 0 auto; padding: 3rem 6%; }
+        .article-header { text-align: center; padding: 3rem 0 2rem; }
+        .article-header h1 { font-size: 2.5rem; color: var(--brand-dark); margin-bottom: 1rem; line-height: 1.3; }
+        .article-meta {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            color: #64748b;
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+        .article-meta span { display: flex; align-items: center; gap: 0.3rem; }
+        .featured-image {
+            width: 100%; height: 300px;
+            background: #f1f5f9;
+            border: 2px dashed #94a3b8;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+            font-size: 0.95rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .article-content h2 {
+            font-size: 1.9rem;
+            color: var(--brand-dark);
+            margin: 2.5rem 0 1rem;
+            border-left: 5px solid var(--brand-blue);
+            padding-left: 1rem;
+        }
+        .article-content h3 {
+            font-size: 1.5rem;
+            color: var(--text-title);
+            margin: 2rem 0 0.8rem;
+        }
+        .article-content p { margin-bottom: 1.2rem; font-size: 1.05rem; color: #334155; }
+        .code-block {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 1.5rem;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            margin: 1.5rem 0;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        .code-block .key { color: #93c5fd; }
+        .code-block .value { color: #fbbf24; }
+        .code-block .comment { color: #94a3b8; }
+        .tip-box {
+            background: #f0f9ff;
+            border-left: 5px solid var(--brand-blue);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+        }
+        .tip-box strong { color: #0f172a; }
+        .info-box {
+            background: #fff7ed;
+            border-left: 5px solid #f97316;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+        }
+        .info-box strong { color: #7c2d12; }
+
+        .steps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+        .step-card {
+            background: #fff;
+            border: 1px solid var(--border-line);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.2s;
+        }
+        .step-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+        .step-number {
+            display: inline-block;
+            width: 2.5rem;
+            height: 2.5rem;
+            background: var(--brand-dark);
+            color: #fff;
+            border-radius: 50%;
+            line-height: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.8rem;
+        }
+        .step-card h4 { margin-bottom: 0.5rem; color: var(--brand-dark); }
+        .step-card p { font-size: 0.9rem; color: #475569; }
+
+        .compare-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            border: 1px solid var(--border-line);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .compare-table th {
+            background: #f1f5f9;
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--brand-dark);
+        }
+        .compare-table td {
+            padding: 0.8rem 1rem;
+            border-top: 1px solid #e2e8f0;
+        }
+        .compare-table tr:hover { background: #f8fafc; }
+
+        .related-links {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+        .related-link-card {
+            background: #fff;
+            border: 1px solid var(--border-line);
+            border-radius: 10px;
+            padding: 1.2rem;
+            text-decoration: none;
+            color: var(--text-main);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .related-link-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+        .related-link-card h4 { font-size: 1.1rem; color: var(--brand-dark); margin-bottom: 0.3rem; }
+        .related-link-card p { font-size: 0.85rem; color: #64748b; }
+
+        .table-of-contents {
+            background: #f8fafc;
+            border: 1px solid var(--border-line);
+            border-radius: 10px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 2rem;
+        }
+        .table-of-contents h3 { margin-bottom: 0.8rem; font-size: 1.2rem; color: var(--brand-dark); }
+        .table-of-contents ul { list-style: none; columns: 2; column-gap: 2rem; }
+        .table-of-contents li { margin-bottom: 0.4rem; }
+        .table-of-contents a { color: var(--brand-blue); text-decoration: none; font-weight: 500; }
+        .table-of-contents a:hover { text-decoration: underline; }
+
+        footer {
+            background: #020617;
+            color: #94a3b8;
+            padding: 4rem 6%;
+            text-align: center;
+            font-size: 0.9rem;
+            border-top: 1px solid #1e293b;
+            margin-top: 3rem;
+        }
+
+        @media (max-width: 768px) {
+            header { flex-direction: column; gap: 1rem; padding: 1.25rem 5%; }
+            .nav-box { flex-direction: column; gap: 1rem; width: 100%; align-items: center; }
+            nav { justify-content: center; flex-wrap: wrap; gap: 0.4rem; }
+            nav a { margin: 0 0.3rem; font-size: 0.88rem; }
+            .github-btn { margin-left: 0; }
+            .article-header h1 { font-size: 1.9rem; }
+            .table-of-contents ul { columns: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="../index.html" class="logo">
+            <img src="../logo.webp" alt="Clash verge rev 官网" width="160" height="38">
+            <span>Clash Verge 官网</span>
+        </a>
+        <div class="nav-box">
+            <nav>
+                <a href="../download.html">客户端下载</a>
+                <a href="../install.html">安装教程</a>
+                <a href="../configuration.html">配置教程</a>
+                <a href="../faq.html">常见问题</a>
+                <a href="../changelog.html">更新日志</a>
+                <a href="index.html" class="nav-active">文章中心</a>
+                <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/wiki">📚 文档</a>
+            </nav>
+            <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/" class="github-btn" target="_blank" rel="noopener noreferrer">
+                <svg viewBox="0 0 16 16" version="1.1" aria-hidden="true"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+                GitHub 仓库
+            </a>
+        </div>
+    </header>
+
+    <main class="article-wrapper">
+        <article>
+            <div class="article-header">
+                <h1>Shadowsocks 协议深度解析：从加密原理到 Clash Verge Rev 实战配置</h1>
+                <div class="article-meta">
+                    <span>📅 2026-07-14</span>
+                    <span>🏷️ 协议解析</span>
+                    <span>⏱️ 阅读约 10 分钟</span>
+                </div>
+            </div>
+
+            <div class="featured-image">
+                [ Shadowsocks 加密隧道与 SOCKS5 代理协同工作示意图 ]
+            </div>
+
+            <div class="table-of-contents">
+                <h3>📑 本文目录</h3>
+                <ul>
+                    <li><a href="#intro">1. Shadowsocks 的诞生与设计哲学</a></li>
+                    <li><a href="#how-it-works">2. 工作原理：加密隧道与 SOCKS5</a></li>
+                    <li><a href="#encryption">3. 加密套件演进：从 stream 到 AEAD</a></li>
+                    <li><a href="#config">4. 在 Clash Verge Rev 中配置 Shadowsocks</a></li>
+                    <li><a href="#optimization">5. 性能优化与网络环境适配</a></li>
+                    <li><a href="#comparison">6. Shadowsocks vs. 其他协议</a></li>
+                    <li><a href="#troubleshoot">7. 常见问题与排查</a></li>
+                </ul>
+            </div>
+
+            <div class="article-content">
+                <h2 id="intro">🌱 Shadowsocks 的诞生与设计哲学</h2>
+                <p>Shadowsocks 由 clowwindy 在 2012 年创建，初衷是提供一个轻量、快速且安全的加密代理工具。与传统的 VPN 不同，Shadowsocks 并不尝试在 IP 层建立隧道，而是专注于将 SOCKS5 代理流量包裹在加密壳中传输。它的设计核心是“像水一样流动”——流量尽量模仿正常的 TCP 连接，不容易被深度包检测 (DPI) 识别和阻断。</p>
+                <p>在 GFW 不断升级的背景下，Shadowsocks 经历了多次协议迭代，从最初的 AES-256-CFB 到后来强制使用的 AEAD 认证加密，安全性大幅提升。目前，它仍是全球使用最广泛的代理协议之一，被 Clash Verge Rev 的 <a href="../mihomo.html" target="_blank">Mihomo 内核</a> 原生支持。与 VMess、VLESS 等协议相比，Shadowsocks 协议简单、开销小、性能卓越，非常适合低配服务器和低延迟场景。</p>
+                <div class="tip-box">
+                    <strong>📌 关键点：</strong> Shadowsocks 只负责传输加密，不提供伪装功能。如果需要伪装成 HTTPS 流量，通常配合 <strong>simple-obfs</strong> 或 <strong>V2Ray-plugin</strong> 使用。不过，在 Clash Verge Rev 中，你可以直接使用 <a href="../configuration.html" target="_blank">配置</a> 中的 <code>plugin</code> 字段启用这些混淆插件。
+                </div>
+
+                <h2 id="how-it-works">⚙️ 工作原理：加密隧道与 SOCKS5</h2>
+                <p>Shadowsocks 的架构包含本地客户端和远程服务器两部分。本地客户端启动一个 SOCKS5 代理，应用程序将流量发送到本地 SOCKS5 端口。客户端将 SOCKS5 数据包加密后，通过 TCP 或 UDP 发送给远程 Shadowsocks 服务器。服务器解密数据包，并向目标地址发起连接，然后将返回数据加密回传给客户端。</p>
+                <div class="steps-grid">
+                    <div class="step-card">
+                        <div class="step-number">1</div>
+                        <h4>应用请求</h4>
+                        <p>浏览器或程序通过 SOCKS5 连接本地 SS 客户端。</p>
+                    </div>
+                    <div class="step-card">
+                        <div class="step-number">2</div>
+                        <h4>加密封装</h4>
+                        <p>客户端将 SOCKS5 数据加密，并添加地址信息头。</p>
+                    </div>
+                    <div class="step-card">
+                        <div class="step-number">3</div>
+                        <h4>隧道传输</h4>
+                        <p>加密后的数据通过 TCP/UDP 发送到远程 SS 服务器。</p>
+                    </div>
+                    <div class="step-card">
+                        <div class="step-number">4</div>
+                        <h4>解密转发</h4>
+                        <p>服务器解密，还原原始请求并连接目标网站。</p>
+                    </div>
+                </div>
+                <p>整个过程，中间网络只能看到加密后的数据流，无法得知原始请求内容。Mihomo 内核在处理 Shadowsocks 节点时，同样遵循这一流程，但由于内核本身集成了规则引擎，你可以直接在配置文件中定义多个 SS 节点，并配合 <a href="../rule.html" target="_blank">Rule 模式</a> 实现分流。</p>
+
+                <h2 id="encryption">🔐 加密套件演进：从 stream 到 AEAD</h2>
+                <p>早期的 Shadowsocks 使用流密码（如 AES-256-CFB、CHACHA20），这些算法简单高效，但缺乏完整性校验，容易受到主动探测和重放攻击。2019 年后，Shadowsocks 社区强制要求使用 AEAD（Authenticated Encryption with Associated Data）加密套件，包括 <code>aes-256-gcm</code>、<code>chacha20-ietf-poly1305</code> 等。AEAD 同时提供加密和完整性验证，极大提升了安全性。</p>
+                <table class="compare-table">
+                    <tr>
+                        <th>加密方式</th>
+                        <th>类型</th>
+                        <th>性能</th>
+                        <th>安全性</th>
+                    </tr>
+                    <tr>
+                        <td>AES-256-GCM</td>
+                        <td>AEAD</td>
+                        <td>高（硬件加速）</td>
+                        <td>极高</td>
+                    </tr>
+                    <tr>
+                        <td>CHACHA20-IETF-POLY1305</td>
+                        <td>AEAD</td>
+                        <td>高（移动设备）</td>
+                        <td>极高</td>
+                    </tr>
+                    <tr>
+                        <td>AES-128-GCM</td>
+                        <td>AEAD</td>
+                        <td>更高</td>
+                        <td>中</td>
+                    </tr>
+                    <tr>
+                        <td>AES-256-CFB（已弃用）</td>
+                        <td>Stream</td>
+                        <td>中</td>
+                        <td>低（易受篡改）</td>
+                    </tr>
+                </table>
+                <p>在 Clash Verge Rev 中，你可以通过节点的 <code>cipher</code> 字段指定加密方式。建议优先使用 <code>aes-256-gcm</code> 或 <code>chacha20-ietf-poly1305</code>，兼容性最好。如果节点服务器支持 <code>2022-blake3-aes-256-gcm</code> 等新标准，也可以获得更强的抗重放能力。</p>
+
+                <h2 id="config">🛠️ 在 Clash Verge Rev 中配置 Shadowsocks</h2>
+                <p>在配置文件里，一个典型的 Shadowsocks 节点定义如下：</p>
+                <div class="code-block">
+<span class="comment"># Shadowsocks 节点</span>
+<span class="key">proxies:</span>
+  - <span class="key">name:</span> <span class="value">"我的SS节点"</span>
+    <span class="key">type:</span> <span class="value">ss</span>
+    <span class="key">server:</span> <span class="value">your-ss-server.com</span>
+    <span class="key">port:</span> <span class="value">8388</span>
+    <span class="key">cipher:</span> <span class="value">aes-256-gcm</span>
+    <span class="key">password:</span> <span class="value">your-strong-password</span>
+    <span class="comment"># 如果使用 obfs 插件</span>
+    <span class="key">plugin:</span> <span class="value">obfs</span>
+    <span class="key">plugin-opts:</span>
+      <span class="key">mode:</span> <span class="value">tls</span>
+      <span class="key">host:</span> <span class="value">www.bing.com</span>
+                </div>
+                <p>如果你使用的是机场订阅，通常这些信息已经包含在订阅返回的 YAML 中，无需手动填写。导入后，你可以在 <a href="../configuration.html" target="_blank">配置页面</a> 的策略组中将该节点加入 <code>url-test</code> 自动选择组，实现智能切换。</p>
+                <div class="tip-box">
+                    <strong>💡 高级技巧：</strong> 若需在单端口下多用户复用，可使用 <code>ssr</code> 协议，但 Mihomo 内核已不再推荐 SSR。更安全的方式是使用 <a href="../enable-tun.html" target="_blank">TUN 模式</a> 结合 WFP 或 gVisor，让所有流量透明代理，无需关心端口。
+                </div>
+
+                <h2 id="optimization">🚀 性能优化与网络环境适配</h2>
+                <p>Shadowsocks 在低延迟网络上表现极佳，但如果服务器较远或带宽受限，可以通过以下方式优化：</p>
+                <ul style="margin: 1rem 0 1.5rem 1.5rem;">
+                    <li><strong>启用多路复用</strong>：虽然 SS 本身不支持 multiplexing，但你可以使用 <strong>Clash.Meta</strong> 内核的 <code>smux</code> 功能（在节点配置中添加 <code>smux: {enabled: true}</code>），将多个连接合并为单一连接，减少握手开销。</li>
+                    <li><strong>选择正确的加密</strong>：在 x86 平台上，AES-256-GCM 受益于 CPU 硬件加速；在 ARM 或移动设备上，CHACHA20-POLY1305 更快。</li>
+                    <li><strong>调整 MTU</strong>：如果出现某些网站打不开的问题，可能需要在服务器端降低 MTU。在客户端，可以通过 Mihomo 的 <code>mtu</code> 参数调整。</li>
+                </ul>
+                <p>如果你的网络对 Shadowsocks 有 QoS 限制，可以搭配 <a href="../dns.html" target="_blank">DNS 防污染</a> 和 <a href="fake-ip-deep-dive.html" target="_blank">Fake‑IP</a> 来改善解析速度，并尝试使用 Hysteria2 协议（参考 <a href="v2.5.2-highlights.html" target="_blank">v2.5.2 新特性</a>）作为备选。</p>
+
+                <h2 id="comparison">📊 Shadowsocks vs. 其他协议</h2>
+                <table class="compare-table">
+                    <tr>
+                        <th>协议</th>
+                        <th>安全性</th>
+                        <th>性能</th>
+                        <th>抗识别</th>
+                        <th>配置难度</th>
+                    </tr>
+                    <tr>
+                        <td>Shadowsocks</td>
+                        <td>高（AEAD）</td>
+                        <td>极高</td>
+                        <td>中（需插件伪装）</td>
+                        <td>低</td>
+                    </tr>
+                    <tr>
+                        <td>VMess</td>
+                        <td>高</td>
+                        <td>中</td>
+                        <td>高（内置混淆）</td>
+                        <td>中</td>
+                    </tr>
+                    <tr>
+                        <td>VLESS</td>
+                        <td>极高（无加密，依赖外部）</td>
+                        <td>极高</td>
+                        <td>极高</td>
+                        <td>高</td>
+                    </tr>
+                    <tr>
+                        <td>Hysteria2</td>
+                        <td>高（QUIC）</td>
+                        <td>极高（高延迟优化）</td>
+                        <td>高</td>
+                        <td>中</td>
+                    </tr>
+                </table>
+                <p>如果你追求速度与简单，Shadowsocks 仍然是首选。特别是对于个人使用或小型 VPN，它的资源占用极低。当你需要更高级的伪装功能时，可以无缝切换到 Clash Verge Rev 支持的其他协议，而无需更换客户端。</p>
+
+                <h2 id="troubleshoot">🩺 常见问题与排查</h2>
+                <div class="steps-grid">
+                    <div class="step-card">
+                        <div class="step-number">1</div>
+                        <h4>连接超时</h4>
+                        <p>检查服务器端口是否开放，防火墙和运营商是否封堵。尝试更换端口或使用 IPv6。</p>
+                    </div>
+                    <div class="step-card">
+                        <div class="step-number">2</div>
+                        <h4>密码错误</h4>
+                        <p>确认客户端和服务器密码、加密方式完全一致，包括大小写。</p>
+                    </div>
+                    <div class="step-card">
+                        <div class="step-number">3</div>
+                        <h4>速度缓慢</h4>
+                        <p>更换加密为 CHACHA20，或检查服务器 CPU 是否过载。</p>
+                    </div>
+                    <div class="step-card">
+                        <div class="step-number">4</div>
+                        <h4>UDP 转发失败</h4>
+                        <p>某些 SS 实现默认关闭 UDP。在 Mihomo 配置中需显式设置 <code>udp: true</code>。</p>
+                    </div>
+                </div>
+                <p>如果怀疑网络对 SS 流量进行了干扰，可以尝试启用 <code>obfs</code> 插件（如 <code>tls</code> 模式），或将节点升级为 Shadowsocks-2022 新协议，它们具有更强的抗探测能力。日常使用中，通过 Clash Verge Rev 的 <a href="../faq.html" target="_blank">常见问题</a> 页面也能找到更多排错方法。</p>
+                <p>随着协议生态的演进，Shadowsocks 将继续扮演基石的角色。掌握它的原理和配置，能让你在面对复杂网络环境时更加游刃有余。如果想了解 Mihomo 内核如何加速这些协议，推荐阅读 <a href="mihomo-plugin-dev.html" target="_blank">插件开发指南</a>。</p>
+            </div>
+
+            <h3 style="font-size: 1.5rem; margin: 2.5rem 0 1rem;">📖 继续阅读</h3>
+            <div class="related-links">
+                <a href="../configuration.html" class="related-link-card">
+                    <h4>📘 配置教程</h4>
+                    <p>配置文件完全解析</p>
+                </a>
+                <a href="../mihomo.html" class="related-link-card">
+                    <h4>🧬 Mihomo 内核</h4>
+                    <p>内核架构与协议支持</p>
+                </a>
+                <a href="../rule.html" class="related-link-card">
+                    <h4>📋 Rule 模式</h4>
+                    <p>智能流量分流</p>
+                </a>
+                <a href="../dns.html" class="related-link-card">
+                    <h4>🌐 DNS 配置</h4>
+                    <p>加密 DNS 与防泄漏</p>
+                </a>
+                <a href="v2.5.2-highlights.html" class="related-link-card">
+                    <h4>📦 v2.5.2 新特性</h4>
+                    <p>Hysteria2 与连接面板</p>
+                </a>
+                <a href="../faq.html" class="related-link-card">
+                    <h4>❓ 常见问题</h4>
+                    <p>更多使用疑难解答</p>
+                </a>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="main-wrapper">
+            <p>&copy; 2026 Clash Verge Rev 官网下载中心. 所有技术内容基于社区公开文档，仅供学习与测试。请遵守当地法律法规。</p>
+        </div>
+    </footer>
+
+</body>
+</html>
