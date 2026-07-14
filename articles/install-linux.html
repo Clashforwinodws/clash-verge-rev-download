@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>在 Linux 上安装 Clash Verge Rev 完全指南 · 多发行版适配</title>
+    <meta name="description" content="从 AppImage 到原生包，覆盖 Ubuntu、Debian、Fedora、Arch 等主流 Linux 发行版。详解依赖安装、TUN 虚拟网卡、systemd 服务化及常见故障修复，助你轻松在 Linux 上部署 Clash Verge Rev。">
+    <meta name="keywords" content="Linux 安装 Clash Verge Rev, Ubuntu, Debian, Fedora, Arch, AppImage, TUN, systemd, 代理客户端安装">
+    <link rel="icon" type="image/x-icon" href="../favicon.ico">
+    <link rel="shortcut icon" type="image/x-icon" href="../favicon.ico">
+    <link rel="canonical" href="https://classhvverge.org/articles/install-linux.html">
+    <link rel="stylesheet" href="../index2.css">
+    <!-- 结构化数据：TechArticle -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "TechArticle",
+      "headline": "在 Linux 上安装 Clash Verge Rev 完全指南",
+      "description": "从 AppImage 到原生包，覆盖 Ubuntu、Debian、Fedora、Arch 等主流 Linux 发行版。详解依赖安装、TUN 虚拟网卡、systemd 服务化及常见故障修复，助你轻松在 Linux 上部署 Clash Verge Rev。",
+      "author": { "@type": "Organization", "name": "Clash Verge Rev 社区" },
+      "datePublished": "2026-07-14",
+      "dateModified": "2026-07-14",
+      "mainEntityOfPage": { "@type": "WebPage", "@id": "https://classhvverge.org/articles/install-linux.html" }
+    }
+    </script>
+    <style>
+        :root {
+            --brand-dark: #0f172a;
+            --brand-blue: #3b82f6;
+            --brand-blue-hover: #2563eb;
+            --text-main: #334155;
+            --text-title: #1e293b;
+            --bg-light: #ffffff;
+            --bg-accent: #f8fafc;
+            --border-line: #cbd5e1;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+            --shadow-md: 0 8px 24px rgba(0,0,0,0.1);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            color: var(--text-main);
+            line-height: 1.75;
+            background-color: var(--bg-light);
+        }
+
+        /* 导航栏（与文章中心一致） */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem 6%;
+            background: var(--brand-dark);
+            color: #ffffff;
+            position: sticky;
+            top: 0;
+            z-index: 2000;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #ffffff;
+            text-decoration: none;
+            flex-shrink: 0;
+        }
+        .logo img { width: auto; height: 38px; margin-right: 12px; display: block; }
+        .nav-box { display: flex; align-items: center; flex-wrap: wrap; gap: 0.75rem; }
+        nav { display: flex; align-items: center; flex-wrap: wrap; gap: 0.35rem; }
+        nav a {
+            margin-left: 0.5rem;
+            text-decoration: none;
+            color: #cbd5e1;
+            font-size: 0.93rem;
+            transition: color 0.2s;
+            white-space: nowrap;
+            padding: 0.25rem 0.35rem;
+            border-radius: 4px;
+        }
+        nav a:hover { color: var(--brand-blue); background-color: rgba(255,255,255,0.05); }
+        nav a.nav-active { color: var(--brand-blue); font-weight: 600; background-color: rgba(59,130,246,0.1); }
+        .github-btn {
+            display: inline-flex;
+            align-items: center;
+            background-color: var(--brand-blue);
+            color: #ffffff;
+            padding: 0.55rem 1.1rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            text-decoration: none;
+            margin-left: 1.5rem;
+            transition: background-color 0.2s;
+            font-weight: 500;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .github-btn:hover { background-color: var(--brand-blue-hover); }
+        .github-btn svg { width: 16px; height: 16px; margin-right: 6px; fill: currentColor; }
+
+        .article-wrapper { max-width: 860px; margin: 0 auto; padding: 3rem 6%; }
+        .article-header { text-align: center; padding: 3rem 0 2rem; }
+        .article-header h1 { font-size: 2.5rem; color: var(--brand-dark); margin-bottom: 1rem; line-height: 1.3; }
+        .article-meta {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            color: #64748b;
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+        .article-meta span { display: flex; align-items: center; gap: 0.3rem; }
+        .featured-image {
+            width: 100%; height: 320px;
+            background: #f1f5f9;
+            border: 2px dashed #94a3b8;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+            font-size: 0.95rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .article-content h2 {
+            font-size: 1.9rem;
+            color: var(--brand-dark);
+            margin: 2.5rem 0 1rem;
+            border-left: 5px solid var(--brand-blue);
+            padding-left: 1rem;
+        }
+        .article-content h3 {
+            font-size: 1.5rem;
+            color: var(--text-title);
+            margin: 2rem 0 0.8rem;
+        }
+        .article-content p { margin-bottom: 1.2rem; font-size: 1.05rem; color: #334155; }
+        .code-block {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 1.5rem;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            margin: 1.5rem 0;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        .code-block .key { color: #93c5fd; }
+        .code-block .value { color: #fbbf24; }
+        .code-block .comment { color: #94a3b8; }
+        .tip-box {
+            background: #f0f9ff;
+            border-left: 5px solid var(--brand-blue);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+        }
+        .tip-box strong { color: #0f172a; }
+        .info-box {
+            background: #fff7ed;
+            border-left: 5px solid #f97316;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+        }
+        .info-box strong { color: #7c2d12; }
+
+        .steps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+        .step-card {
+            background: #fff;
+            border: 1px solid var(--border-line);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.2s;
+        }
+        .step-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+        .step-number {
+            display: inline-block;
+            width: 2.5rem;
+            height: 2.5rem;
+            background: var(--brand-dark);
+            color: #fff;
+            border-radius: 50%;
+            line-height: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.8rem;
+        }
+        .step-card h4 { margin-bottom: 0.5rem; color: var(--brand-dark); }
+        .step-card p { font-size: 0.9rem; color: #475569; }
+
+        .related-links {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+        .related-link-card {
+            background: #fff;
+            border: 1px solid var(--border-line);
+            border-radius: 10px;
+            padding: 1.2rem;
+            text-decoration: none;
+            color: var(--text-main);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .related-link-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+        .related-link-card h4 { font-size: 1.1rem; color: var(--brand-dark); margin-bottom: 0.3rem; }
+        .related-link-card p { font-size: 0.85rem; color: #64748b; }
+
+        .table-of-contents {
+            background: #f8fafc;
+            border: 1px solid var(--border-line);
+            border-radius: 10px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 2rem;
+        }
+        .table-of-contents h3 { margin-bottom: 0.8rem; font-size: 1.2rem; color: var(--brand-dark); }
+        .table-of-contents ul { list-style: none; columns: 2; column-gap: 2rem; }
+        .table-of-contents li { margin-bottom: 0.4rem; }
+        .table-of-contents a { color: var(--brand-blue); text-decoration: none; font-weight: 500; }
+        .table-of-contents a:hover { text-decoration: underline; }
+
+        footer {
+            background: #020617;
+            color: #94a3b8;
+            padding: 4rem 6%;
+            text-align: center;
+            font-size: 0.9rem;
+            border-top: 1px solid #1e293b;
+            margin-top: 3rem;
+        }
+
+        @media (max-width: 768px) {
+            header { flex-direction: column; gap: 1rem; padding: 1.25rem 5%; }
+            .nav-box { flex-direction: column; gap: 1rem; width: 100%; align-items: center; }
+            nav { justify-content: center; flex-wrap: wrap; gap: 0.4rem; }
+            nav a { margin: 0 0.3rem; font-size: 0.88rem; }
+            .github-btn { margin-left: 0; }
+            .article-header h1 { font-size: 1.9rem; }
+            .table-of-contents ul { columns: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="../index.html" class="logo">
+            <img src="../logo.webp" alt="Clash verge rev 官网" width="160" height="38">
+            <span>Clash Verge 官网</span>
+        </a>
+        <div class="nav-box">
+            <nav>
+                <a href="../download.html">客户端下载</a>
+                <a href="../install.html">安装教程</a>
+                <a href="../configuration.html">配置教程</a>
+                <a href="../faq.html">常见问题</a>
+                <a href="../changelog.html">更新日志</a>
+                <a href="index.html" class="nav-active">文章中心</a>
+                <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/wiki">📚 文档</a>
+            </nav>
+            <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/" class="github-btn" target="_blank" rel="noopener noreferrer">
+                <svg viewBox="0 0 16 16" version="1.1" aria-hidden="true"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+                GitHub 仓库
+            </a>
+        </div>
+    </header>
+
+    <main class="article-wrapper">
+        <article>
+            <div class="article-header">
+                <h1>在 Linux 上安装 Clash Verge Rev 完全指南</h1>
+                <div class="article-meta">
+                    <span>📅 2026-07-14</span>
+                    <span>🏷️ 上手教程</span>
+                    <span>⏱️ 阅读约 10 分钟</span>
+                </div>
+            </div>
+
+            <div class="featured-image">
+                [ 多个 Linux 发行版的 Clash Verge Rev 运行截图 ]
+            </div>
+
+            <div class="table-of-contents">
+                <h3>📑 本文目录</h3>
+                <ul>
+                    <li><a href="#why-linux">1. 为什么在 Linux 上选择 Clash Verge Rev？</a></li>
+                    <li><a href="#before-install">2. 安装前准备：环境与依赖</a></li>
+                    <li><a href="#methods">3. 三种安装方式详解</a></li>
+                    <li><a href="#appimage">4. AppImage 通用安装</a></li>
+                    <li><a href="#native">5. 发行版原生包安装</a></li>
+                    <li><a href="#tun-setup">6. TUN 模式与权限配置</a></li>
+                    <li><a href="#autostart">7. 使用 systemd 实现开机自启</a></li>
+                    <li><a href="#troubleshoot">8. 常见问题与修复</a></li>
+                </ul>
+            </div>
+
+            <div class="article-content">
+                <h2 id="why-linux">🐧 为什么在 Linux 上选择 Clash Verge Rev？</h2>
+                <p>Linux 拥有丰富的代理工具生态，但 Clash Verge Rev 脱颖而出：它不仅提供了跨平台一致的现代图形界面，还内置了 Tauri 框架带来的轻量体验。与纯命令行的 v2ray、shadowsocks-libev 相比，Clash Verge Rev 的可视化配置、规则管理以及实时日志面板显著降低了使用门槛。特别是其集成的 <a href="../mihomo.html" target="_blank">Mihomo 内核</a> 对 Linux TUN 模式的支持非常成熟，使得全局透明代理不再是 iptables 专家的专利。</p>
+                <p>无论你是使用 Ubuntu 进行日常开发，还是在 Fedora 上构建容器化环境，甚至是 Arch Linux 的滚动更新爱好者，本指南都将覆盖适合你的安装路径。后续的配置部分请参考 <a href="../configuration.html" target="_blank">配置教程</a> 以及 <a href="../import-subscription.html" target="_blank">导入订阅指南</a>。</p>
+
+                <h2 id="before-install">📦 安装前准备：环境与依赖</h2>
+                <p>Clash Verge Rev 的 AppImage 包几乎自包含所有库，但为了图形界面和 TUN 模式正常工作，仍需确保基础系统库已安装。不同发行版使用对应的包管理器：</p>
+                <div class="code-block">
+<span class="comment"># Ubuntu / Debian</span>
+<span class="value">sudo apt update && sudo apt install -y libfuse2 libnss3 libgtk-3-0 libwebkit2gtk-4.1-0</span>
+
+<span class="comment"># Fedora</span>
+<span class="value">sudo dnf install -y fuse-libs nss gtk3 webkit2gtk4.1</span>
+
+<span class="comment"># Arch Linux</span>
+<span class="value">sudo pacman -S fuse2 nss gtk3 webkit2gtk-4.1</span>
+                </div>
+                <p><code>libfuse2</code> 是运行 AppImage 的必要组件；<code>webkit2gtk</code> 则用于渲染客户端界面。如果你计划在无图形界面的服务器上运行，可以跳过 webkit2gtk，但后续配置可能需要通过另一台机器的浏览器访问（如使用 Clash Verge Rev 的远程控制功能，但目前版本仍以 GUI 为主）。此外，务必加载 <code>tun</code> 内核模块以备后续 TUN 模式：</p>
+                <div class="code-block">
+<span class="value">sudo modprobe tun</span>
+<span class="value">echo "tun" | sudo tee /etc/modules-load.d/tun.conf</span>
+                </div>
+                <div class="tip-box">
+                    <strong>💡 提示：</strong> 如果你使用的是 WSL2（Windows Subsystem for Linux），需要确保 WSL 内核支持 <code>tun</code>，并在 Windows 侧开启虚拟网卡功能。具体请参考 <a href="ubuntu-clash-verge-setup.html" target="_blank">Ubuntu 部署教程</a> 中的环境说明。
+                </div>
+
+                <h2 id="methods">🗂️ 三种安装方式速览</h2>
+                <p>根据你的使用习惯和发行版，可选择：</p>
+                <ul style="margin: 1rem 0 1.5rem 1.5rem;">
+                    <li><strong>AppImage</strong>：通用格式，无需安装，下载即用，适合所有发行版。</li>
+                    <li><strong>原生包（.deb / .rpm）</strong>：深度集成系统菜单，更新方便。</li>
+                    <li><strong>用户仓库（AUR / COPR）</strong>：由社区维护，一行命令安装。</li>
+                </ul>
+                <p>我们将在下面详细展开每种方法。</p>
+
+                <h2 id="appimage">🎯 AppImage 通用安装</h2>
+                <p>从 <a href="../download.html" target="_blank">下载页面</a> 或 GitHub Releases 获取最新的 <code>Clash.Verge_*.AppImage</code> 文件。赋予执行权限后即可运行：</p>
+                <div class="code-block">
+<span class="value">chmod +x Clash.Verge_2.5.2_amd64.AppImage</span>
+<span class="value">./Clash.Verge_2.5.2_amd64.AppImage</span>
+                </div>
+                <p>首次启动可能需要几秒钟解压。如果系统提示缺少 FUSE，请回顾上文安装 <code>libfuse2</code>。若仍无法运行，可以尝试 <code>./Clash.Verge_2.5.2_amd64.AppImage --appimage-extract-and-run</code>，这将直接解压并运行，绕过 FUSE 依赖。</p>
+                <p>为了日常使用方便，建议将 AppImage 移动到 <code>/opt</code> 并创建桌面快捷方式：</p>
+                <div class="code-block">
+<span class="value">sudo mv Clash.Verge_2.5.2_amd64.AppImage /opt/clash-verge-rev.AppImage</span>
+<span class="comment"># 创建 .desktop 文件</span>
+<span class="value">cat > ~/.local/share/applications/clash-verge-rev.desktop << EOF</span>
+<span class="value">[Desktop Entry]</span>
+<span class="value">Name=Clash Verge Rev</span>
+<span class="value">Exec=/opt/clash-verge-rev.AppImage</span>
+<span class="value">Icon=clash-verge</span>
+<span class="value">Type=Application</span>
+<span class="value">Categories=Network;</span>
+<span class="value">EOF</span>
+                </div>
+
+                <h2 id="native">📀 发行版原生包安装</h2>
+                <h3>Ubuntu / Debian (.deb)</h3>
+                <p>GitHub Releases 提供预编译的 <code>.deb</code> 包。下载后通过命令行或图形工具安装：</p>
+                <div class="code-block">
+<span class="value">sudo dpkg -i ./Clash.Verge_2.5.2_amd64.deb</span>
+<span class="comment"># 如果提示依赖问题</span>
+<span class="value">sudo apt --fix-broken install</span>
+                </div>
+                <p>此后，Clash Verge Rev 将出现在系统菜单中，并可通过 <code>apt</code> 管理更新（需手动下载新版本）。</p>
+
+                <h3>Fedora / RHEL (.rpm)</h3>
+                <div class="code-block">
+<span class="value">sudo rpm -i ./Clash.Verge_2.5.2_amd64.rpm</span>
+                </div>
+                <p>Fedora 用户也可使用 COPR 社区仓库（如 <code>sudo dnf copr enable somebody/clash-verge-rev</code>），以获得自动更新。</p>
+
+                <h3>Arch Linux (AUR)</h3>
+                <p>Arch 用户可以直接从 AUR 安装：</p>
+                <div class="code-block">
+<span class="value">yay -S clash-verge-rev-bin</span>
+                </div>
+                <p>这将自动拉取最新的预编译包并处理依赖。</p>
+                <div class="info-box">
+                    <strong>⚠️ 注意：</strong> 原生包通常不包含最新的 Mihomo 内核，你可能需要手动从 GitHub 下载内核文件并放入 <code>~/.config/clash-verge-rev/</code> 下，以确保协议支持完整。
+                </div>
+
+                <h2 id="tun-setup">🔧 TUN 模式与权限配置</h2>
+                <p>Linux 下开启 TUN 模式需要管理员权限，因为要创建虚拟网络设备。最简单的方式是以 <code>sudo</code> 运行 Clash Verge Rev，但这会让整个进程拥有 root 权限，不够安全。推荐做法是赋予 AppImage 或可执行文件 <code>CAP_NET_ADMIN</code> 能力：</p>
+                <div class="code-block">
+<span class="value">sudo setcap cap_net_admin+ep /opt/clash-verge-rev.AppImage</span>
+                </div>
+                <p>此后，普通用户启动时即可启用 TUN 模式。如果使用 <code>.deb</code> 安装，二进制文件通常位于 <code>/usr/bin/clash-verge-rev</code>，同样使用 <code>setcap</code> 指向它。</p>
+                <p>在 TUN 设置页面中，建议将堆栈设为 <strong>gVisor</strong> 以获得更好的兼容性，尤其对于自定义内核或受限的 VPS 环境。更多 TUN 模式的原理与调优，请阅读 <a href="../enable-tun.html" target="_blank">开启 TUN 模式</a> 和 <a href="tun-no-internet-fix.html" target="_blank">TUN 断网排查指南</a>。</p>
+
+                <h2 id="autostart">🚀 使用 systemd 实现开机自启</h2>
+                <p>在 Linux 上，通过创建用户级 systemd 服务可以让 Clash Verge Rev 随桌面登录自动启动，且无需 root 权限（除非需要 TUN，此时服务文件应使用系统级服务）。</p>
+                <p>创建 <code>~/.config/systemd/user/clash-verge-rev.service</code>：</p>
+                <div class="code-block">
+<span class="key">[Unit]</span>
+<span class="value">Description=Clash Verge Rev 代理客户端</span>
+<span class="value">After=graphical-session.target</span>
+
+<span class="key">[Service]</span>
+<span class="value">Type=simple</span>
+<span class="value">ExecStart=/opt/clash-verge-rev.AppImage</span>
+<span class="value">Restart=on-failure</span>
+<span class="value">Environment=DISPLAY=:0</span>
+
+<span class="key">[Install]</span>
+<span class="value">WantedBy=default.target</span>
+                </div>
+                <p>然后启用服务：<code>systemctl --user enable --now clash-verge-rev.service</code>。如果 TUN 模式需要系统级权限，应将服务文件放在 <code>/etc/systemd/system/</code>，并在 <code>[Service]</code> 中添加 <code>User=yourname</code>，然后使用 <code>sudo systemctl enable clash-verge-rev</code>。详细步骤可参考 <a href="ubuntu-clash-verge-setup.html" target="_blank">Ubuntu 部署教程</a> 中的服务化章节。</p>
+
+                <h2 id="troubleshoot">🩺 常见问题与修复</h2>
+                <div class="steps-grid">
+                    <div class="step-card">
+                        <div class="step-number">1</div>
+                        <h4>AppImage 闪退</h4>
+                        <p>终端运行查看错误：可能是 <code>libwebkit2gtk</code> 缺失或版本不匹配。</p>
+                    </div>
+                    <div class="step-card">
+                        <div class="step-number">2</div>
+                        <h4>TUN 设备创建失败</h4>
+                        <p>确认 <code>tun</code> 内核模块已加载，且已赋予 <code>CAP_NET_ADMIN</code>。</p>
+                    </div>
+                    <div class="step-card">
+                        <div class="step-number">3</div>
+                        <h4>无法打开系统代理端口</h4>
+                        <p>检查 7890 等端口是否被占用：<code>sudo lsof -i :7890</code>，关闭冲突进程。</p>
+                    </div>
+                    <div class="step-card">
+                        <div class="step-number">4</div>
+                        <h4>图形界面无法显示</h4>
+                        <p>SSH 远程需设置 <code>DISPLAY</code> 变量或使用 X11 转发。纯服务器建议配合无头内核。</p>
+                    </div>
+                </div>
+                <p>如果你是从旧版本升级或从其他代理客户端迁移过来，请确保清理旧的系统代理设置，避免端口冲突。更多问题可查阅 <a href="../faq.html" target="_blank">常见问题</a> 页面。</p>
+                <p>安装完成后，你就可以享受 Clash Verge Rev 在 Linux 上的强大性能了。接下来，建议深入阅读 <a href="../rule.html" target="_blank">Rule 模式</a> 和 <a href="../dns.html" target="_blank">DNS 配置</a>，打造属于你的极致代理体验。</p>
+            </div>
+
+            <h3 style="font-size: 1.5rem; margin: 2.5rem 0 1rem;">📖 继续阅读</h3>
+            <div class="related-links">
+                <a href="../install.html" class="related-link-card">
+                    <h4>💻 全平台安装教程</h4>
+                    <p>Windows 与 macOS 安装指南</p>
+                </a>
+                <a href="ubuntu-clash-verge-setup.html" class="related-link-card">
+                    <h4>🐧 Ubuntu 完整部署</h4>
+                    <p>透明代理网关方案</p>
+                </a>
+                <a href="../enable-tun.html" class="related-link-card">
+                    <h4>🔌 TUN 模式详解</h4>
+                    <p>全局代理与虚拟网卡</p>
+                </a>
+                <a href="../dns.html" class="related-link-card">
+                    <h4>🌐 DNS 配置</h4>
+                    <p>加密 DNS 与防污染</p>
+                </a>
+                <a href="../configuration.html" class="related-link-card">
+                    <h4>📘 配置教程</h4>
+                    <p>配置文件完全解析</p>
+                </a>
+                <a href="../faq.html" class="related-link-card">
+                    <h4>❓ 常见问题</h4>
+                    <p>安装与运行排错</p>
+                </a>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="main-wrapper">
+            <p>&copy; 2026 Clash Verge Rev 官网下载中心. 所有技术内容基于社区公开文档，仅供学习与测试。请遵守当地法律法规。</p>
+        </div>
+    </footer>
+
+</body>
+</html>
