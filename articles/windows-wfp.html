@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Windows WFP 深度解析 · Clash Verge Rev 的系统级网络过滤引擎</title>
+    <meta name="description" content="揭示 Clash Verge Rev 在 Windows 上利用 WFP (Windows Filtering Platform) 实现无端口监听、零冲突的透明代理原理。详解 WFP 与 TUN 模式、系统代理的优劣，包含内核过滤引擎配置、性能调优及常见故障排除。">
+    <meta name="keywords" content="Windows WFP, Windows Filtering Platform, Clash Verge Rev WFP, 透明代理, 网络过滤, WFP 驱动, 系统级代理, TUN 对比">
+    <link rel="icon" type="image/x-icon" href="../favicon.ico">
+    <link rel="shortcut icon" type="image/x-icon" href="../favicon.ico">
+    <link rel="canonical" href="https://classhvverge.org/articles/windows-wfp.html">
+    <link rel="stylesheet" href="../index2.css">
+    <!-- 结构化数据：TechArticle -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "TechArticle",
+      "headline": "Windows WFP 深度解析：Clash Verge Rev 的系统级网络过滤引擎",
+      "description": "揭示 Clash Verge Rev 在 Windows 上利用 WFP (Windows Filtering Platform) 实现无端口监听、零冲突的透明代理原理。详解 WFP 与 TUN 模式、系统代理的优劣，包含内核过滤引擎配置、性能调优及常见故障排除。",
+      "author": { "@type": "Organization", "name": "Clash Verge Rev 社区" },
+      "datePublished": "2026-07-14",
+      "dateModified": "2026-07-14",
+      "mainEntityOfPage": { "@type": "WebPage", "@id": "https://classhvverge.org/articles/windows-wfp.html" }
+    }
+    </script>
+    <style>
+        :root {
+            --brand-dark: #0f172a;
+            --brand-blue: #3b82f6;
+            --brand-blue-hover: #2563eb;
+            --text-main: #334155;
+            --text-title: #1e293b;
+            --bg-light: #ffffff;
+            --bg-accent: #f8fafc;
+            --border-line: #cbd5e1;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+            --shadow-md: 0 8px 24px rgba(0,0,0,0.1);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            color: var(--text-main);
+            line-height: 1.75;
+            background-color: var(--bg-light);
+        }
+
+        /* 导航栏（与文章中心一致） */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem 6%;
+            background: var(--brand-dark);
+            color: #ffffff;
+            position: sticky;
+            top: 0;
+            z-index: 2000;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #ffffff;
+            text-decoration: none;
+            flex-shrink: 0;
+        }
+        .logo img { width: auto; height: 38px; margin-right: 12px; display: block; }
+        .nav-box { display: flex; align-items: center; flex-wrap: wrap; gap: 0.75rem; }
+        nav { display: flex; align-items: center; flex-wrap: wrap; gap: 0.35rem; }
+        nav a {
+            margin-left: 0.5rem;
+            text-decoration: none;
+            color: #cbd5e1;
+            font-size: 0.93rem;
+            transition: color 0.2s;
+            white-space: nowrap;
+            padding: 0.25rem 0.35rem;
+            border-radius: 4px;
+        }
+        nav a:hover { color: var(--brand-blue); background-color: rgba(255,255,255,0.05); }
+        nav a.nav-active { color: var(--brand-blue); font-weight: 600; background-color: rgba(59,130,246,0.1); }
+        .github-btn {
+            display: inline-flex;
+            align-items: center;
+            background-color: var(--brand-blue);
+            color: #ffffff;
+            padding: 0.55rem 1.1rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            text-decoration: none;
+            margin-left: 1.5rem;
+            transition: background-color 0.2s;
+            font-weight: 500;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .github-btn:hover { background-color: var(--brand-blue-hover); }
+        .github-btn svg { width: 16px; height: 16px; margin-right: 6px; fill: currentColor; }
+
+        .article-wrapper { max-width: 860px; margin: 0 auto; padding: 3rem 6%; }
+        .article-header { text-align: center; padding: 3rem 0 2rem; }
+        .article-header h1 { font-size: 2.5rem; color: var(--brand-dark); margin-bottom: 1rem; line-height: 1.3; }
+        .article-meta {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            color: #64748b;
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+        .article-meta span { display: flex; align-items: center; gap: 0.3rem; }
+        .featured-image {
+            width: 100%; height: 320px;
+            background: #f1f5f9;
+            border: 2px dashed #94a3b8;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+            font-size: 0.95rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .article-content h2 {
+            font-size: 1.9rem;
+            color: var(--brand-dark);
+            margin: 2.5rem 0 1rem;
+            border-left: 5px solid var(--brand-blue);
+            padding-left: 1rem;
+        }
+        .article-content h3 {
+            font-size: 1.5rem;
+            color: var(--text-title);
+            margin: 2rem 0 0.8rem;
+        }
+        .article-content p { margin-bottom: 1.2rem; font-size: 1.05rem; color: #334155; }
+        .code-block {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 1.5rem;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            margin: 1.5rem 0;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        .code-block .key { color: #93c5fd; }
+        .code-block .value { color: #fbbf24; }
+        .code-block .comment { color: #94a3b8; }
+        .tip-box {
+            background: #f0f9ff;
+            border-left: 5px solid var(--brand-blue);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+        }
+        .tip-box strong { color: #0f172a; }
+        .info-box {
+            background: #fff7ed;
+            border-left: 5px solid #f97316;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+        }
+        .info-box strong { color: #7c2d12; }
+
+        .steps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+        .step-card {
+            background: #fff;
+            border: 1px solid var(--border-line);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.2s;
+        }
+        .step-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+        .step-number {
+            display: inline-block;
+            width: 2.5rem;
+            height: 2.5rem;
+            background: var(--brand-dark);
+            color: #fff;
+            border-radius: 50%;
+            line-height: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.8rem;
+        }
+        .step-card h4 { margin-bottom: 0.5rem; color: var(--brand-dark); }
+        .step-card p { font-size: 0.9rem; color: #475569; }
+
+        .related-links {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+        .related-link-card {
+            background: #fff;
+            border: 1px solid var(--border-line);
+            border-radius: 10px;
+            padding: 1.2rem;
+            text-decoration: none;
+            color: var(--text-main);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .related-link-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+        .related-link-card h4 { font-size: 1.1rem; color: var(--brand-dark); margin-bottom: 0.3rem; }
+        .related-link-card p { font-size: 0.85rem; color: #64748b; }
+
+        .table-of-contents {
+            background: #f8fafc;
+            border: 1px solid var(--border-line);
+            border-radius: 10px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 2rem;
+        }
+        .table-of-contents h3 { margin-bottom: 0.8rem; font-size: 1.2rem; color: var(--brand-dark); }
+        .table-of-contents ul { list-style: none; columns: 2; column-gap: 2rem; }
+        .table-of-contents li { margin-bottom: 0.4rem; }
+        .table-of-contents a { color: var(--brand-blue); text-decoration: none; font-weight: 500; }
+        .table-of-contents a:hover { text-decoration: underline; }
+
+        footer {
+            background: #020617;
+            color: #94a3b8;
+            padding: 4rem 6%;
+            text-align: center;
+            font-size: 0.9rem;
+            border-top: 1px solid #1e293b;
+            margin-top: 3rem;
+        }
+
+        @media (max-width: 768px) {
+            header { flex-direction: column; gap: 1rem; padding: 1.25rem 5%; }
+            .nav-box { flex-direction: column; gap: 1rem; width: 100%; align-items: center; }
+            nav { justify-content: center; flex-wrap: wrap; gap: 0.4rem; }
+            nav a { margin: 0 0.3rem; font-size: 0.88rem; }
+            .github-btn { margin-left: 0; }
+            .article-header h1 { font-size: 1.9rem; }
+            .table-of-contents ul { columns: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="../index.html" class="logo">
+            <img src="../logo.webp" alt="Clash verge rev 官网" width="160" height="38">
+            <span>Clash Verge 官网</span>
+        </a>
+        <div class="nav-box">
+            <nav>
+                <a href="../download.html">客户端下载</a>
+                <a href="../install.html">安装教程</a>
+                <a href="../configuration.html">配置教程</a>
+                <a href="../faq.html">常见问题</a>
+                <a href="../changelog.html">更新日志</a>
+                <a href="index.html" class="nav-active">文章中心</a>
+                <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/wiki">📚 文档</a>
+            </nav>
+            <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/" class="github-btn" target="_blank" rel="noopener noreferrer">
+                <svg viewBox="0 0 16 16" version="1.1" aria-hidden="true"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+                GitHub 仓库
+            </a>
+        </div>
+    </header>
+
+    <main class="article-wrapper">
+        <article>
+            <div class="article-header">
+                <h1>Windows WFP：Clash Verge Rev 的系统级网络过滤引擎</h1>
+                <div class="article-meta">
+                    <span>📅 2026-07-14</span>
+                    <span>🏷️ 底层技术</span>
+                    <span>⏱️ 阅读约 12 分钟</span>
+                </div>
+            </div>
+
+            <div class="featured-image">
+                [ Windows Filtering Platform 过滤框架与 Clash 代理流量接管示意图 ]
+            </div>
+
+            <div class="table-of-contents">
+                <h3>📑 本文目录</h3>
+                <ul>
+                    <li><a href="#what-is-wfp">1. 什么是 WFP？</a></li>
+                    <li><a href="#why-wfp">2. 为什么 Clash 需要 WFP？</a></li>
+                    <li><a href="#wfp-vs-tun">3. WFP 与 TUN 模式的本质区别</a></li>
+                    <li><a href="#config">4. 配置 Clash Verge Rev 使用 WFP</a></li>
+                    <li><a href="#performance">5. 性能优化与资源管理</a></li>
+                    <li><a href="#troubleshoot">6. 故障排查与高级诊断</a></li>
+                    <li><a href="#future">7. 未来展望：WFP 与 eBPF</a></li>
+                </ul>
+            </div>
+
+            <div class="article-content">
+                <h2 id="what-is-wfp">🔍 什么是 WFP？</h2>
+                <p>Windows Filtering Platform (WFP) 是微软自 Windows Vista 起内置的一套网络过滤框架。它允许应用程序或驱动在系统网络栈的多个层级插入回调函数，从而检查、修改甚至阻止网络数据包。与传统的 Winsock LSP 或 TDI 相比，WFP 提供了更细粒度的控制：你可以在应用层 (ALE)、传输层 (Transport)、网络层 (IP) 等不同位置设置过滤器，支持 TCP/UDP、ICMP 以及原始 IP 流量。</p>
+                <p>WFP 的核心优势在于它是内核级的，性能开销极低，且不会改变系统网络设置（例如不会创建虚拟网卡）。许多安全软件（如 Windows Defender 防火墙）、VPN 客户端以及抓包工具都基于 WFP 实现。Clash Verge Rev 利用 WFP，可以在不修改路由表、不创建 TUN 网卡的情况下实现流量的透明拦截和重定向。</p>
+                <div class="tip-box">
+                    <strong>📌 关键概念：</strong> WFP 过滤器由“过滤条件”和“回调函数”组成。条件可以是 IP 地址、端口、进程 ID 等，回调函数则在匹配时执行相应动作（允许、阻止、调用自定义处理）。Clash 正是通过注册 WFP 回调，将符合条件的流量导入内核代理模块。
+                </div>
+
+                <h2 id="why-wfp">🎯 为什么 Clash 需要 WFP？</h2>
+                <p>在 Windows 上，传统代理方案通常依赖系统代理 (WinINet/WinHTTP) 或 TUN 虚拟网卡。系统代理简单但覆盖不全——许多应用（如命令行工具、游戏、UWP 应用）并不遵循系统代理设置。TUN 模式虽然能实现全局代理，但需要安装虚拟网卡驱动，与部分杀毒软件、VPN 存在兼容性问题，且每次启动都要修改路由表，容易导致断网。</p>
+                <p>WFP 提供了一个更优雅的解决方案：它直接在内核层面拦截网络请求，不依赖代理设置，也不创建额外网络接口。这意味着：</p>
+                <ul style="margin: 1rem 0 1.5rem 1.5rem;">
+                    <li>不会与其它 VPN 软件产生网卡冲突。</li>
+                    <li>无需修改系统路由表，避免路由错误导致断网。</li>
+                    <li>支持所有基于 Winsock 的应用程序，包括那些硬编码 DNS 或不走系统代理的软件。</li>
+                </ul>
+                <p>Clash Verge Rev 在 Windows 上默认使用 WFP 作为 TUN 模式的底层驱动，用户可以在设置中看到相关选项。关于 TUN 模式的其他细节，你可以参考 <a href="../enable-tun.html" target="_blank">开启 TUN 模式</a> 一文。</p>
+
+                <h2 id="wfp-vs-tun">⚖️ WFP 与 TUN 模式的本质区别</h2>
+                <p>尽管在 Clash Verge Rev 中两者均被归类为“TUN 模式”的底层实现，但它们的机制截然不同：</p>
+                <div class="steps-grid">
+                    <div class="step-card">
+                        <div class="step-number">WFP</div>
+                        <h4>内核过滤层</h4>
+                        <p>在 Windows 网络栈中注册回调，直接在 ALE 层拦截连接请求和 UDP 包，不创建虚拟网卡。</p>
+                    </div>
+                    <div class="step-card">
+                        <div class="step-number">TUN</div>
+                        <h4>虚拟网卡层</h4>
+                        <p>创建虚拟网络适配器，通过修改路由表将流量导入该网卡，再由用户态程序读取。</p>
+                    </div>
+                    <div class="step-card">
+                        <div class="step-number">性能</div>
+                        <h4>WFP 开销更低</h4>
+                        <p>内核回调直接处理，无上下文切换到用户态；TUN 需要数据包在用户态和内核态间拷贝。</p>
+                    </div>
+                    <div class="step-card">
+                        <div class="step-number">兼容性</div>
+                        <h4>WFP 更友好</h4>
+                        <p>不创建额外网络设备，不会与其他 VPN 驱动冲突；TUN 则可能因 Wintun 驱动问题导致蓝屏。</p>
+                    </div>
+                </div>
+                <p>实际体验中，使用 WFP 后，系统启动、休眠恢复时不会出现短暂的断网，因为路由表保持不变。然而，WFP 目前仅支持 Windows 平台，而 TUN 模式是跨平台的。如果你需要在 Linux 或 macOS 上实现类似功能，就必须使用 TUN 或系统代理。</p>
+                <div class="info-box">
+                    <strong>⚠️ 注意：</strong> 在 v2.5.2 版本中，Clash Verge Rev 对 WFP 的支持已集成到 TUN 设置中，只需将 TUN 堆栈选择为“WFP”即可（前提是你的 Mihomo 内核已包含 WFP 模块）。
+                </div>
+
+                <h2 id="config">🛠️ 配置 Clash Verge Rev 使用 WFP</h2>
+                <p>在最新版 Clash Verge Rev 中，启用 WFP 非常简单：</p>
+                <ol style="margin: 1rem 0 1.5rem 1.5rem;">
+                    <li>打开 Clash Verge Rev，进入 <strong>“设置”</strong> → <strong>“TUN 模式”</strong>。</li>
+                    <li>将 <strong>“TUN 堆栈”</strong> 下拉菜单从 “System” 或 “gVisor” 切换为 <strong>“WFP”</strong>。</li>
+                    <li>点击开启 TUN 模式，系统会提示管理员权限（WFP 需要注册内核过滤器），点击“是”。</li>
+                    <li>观察日志，如果出现 “WFP filter registered” 类似信息，说明已生效。</li>
+                </ol>
+                <p>配置文件中的对应字段为：</p>
+                <div class="code-block">
+<span class="key">tun:</span>
+  <span class="key">enable:</span> <span class="value">true</span>
+  <span class="key">stack:</span> <span class="value">wfp</span>      <span class="comment"># 使用 Windows Filtering Platform</span>
+  <span class="key">dns-hijack:</span>
+    - <span class="value">any:53</span>    <span class="comment"># WFP 模式同样需要 DNS 劫持</span>
+                </div>
+                <p>启用后，你无需再进行额外的端口代理设置。配合 <a href="../dns.html" target="_blank">DNS 配置</a> 中的 Fake‑IP 模式，DNS 请求也会被 WFP 内核过滤器拦截并重定向到 Clash 的 DNS 模块，实现无泄漏的全局代理。如果你还需要局域网共享，可参考 <a href="ubuntu-clash-verge-setup.html" target="_blank">Ubuntu 部署教程</a> 中的类似思路，在 Windows 防火墙中放行对应端口。</p>
+
+                <h2 id="performance">🚀 性能优化与资源管理</h2>
+                <p>WFP 虽然高效，但大量过滤规则或同时活动连接仍可能消耗系统资源。以下优化建议可帮你获得最佳体验：</p>
+                <ul style="margin: 1rem 0 1.5rem 1.5rem;">
+                    <li><strong>限制 WFP 过滤范围</strong>：默认情况下，WFP 会拦截所有进程的流量。如果你只需要代理特定应用，可以在配置中添加 <code>bypass</code> 列表，让系统流量直连。</li>
+                    <li><strong>结合规则分流</strong>：利用 <a href="../rule.html" target="_blank">Rule 模式</a> 将国内流量在 WFP 层直接放行（DIRECT），避免所有包都进入代理内核处理，降低 CPU 使用率。</li>
+                    <li><strong>监控句柄泄漏</strong>：极少数情况下，老旧驱动或恶意软件会干扰 WFP 过滤器。通过 <code>netsh wfp show state</code> 检查活跃过滤器数量，若异常增多，重启 Clash 可清理。</li>
+                </ul>
+                <div class="code-block">
+<span class="comment"># 在管理员终端查看当前 WFP 过滤器信息</span>
+<span class="value">netsh wfp show filters</span>
+                </div>
+                <p>若发现 Clash 注册的过滤器数量随着时间持续增长（句柄泄漏），可以尝试更新至最新版 Mihomo 内核，因为内核会定期清理无效的过滤规则。</p>
+
+                <h2 id="troubleshoot">🩺 故障排查与高级诊断</h2>
+                <div class="steps-grid">
+                    <div class="step-card">
+                        <div class="step-number">1</div>
+                        <h4>WFP 无法启动</h4>
+                        <p>确保以管理员权限运行，且系统没有禁用 Windows Filtering Platform 服务。</p>
+                    </div>
+                    <div class="step-card">
+                        <div class="step-number">2</div>
+                        <h4>部分应用无法代理</h4>
+                        <p>检查应用的网络堆栈是否为内核级（如 WSL2），WFP 可能无法拦截。改用系统代理或 TUN 模式。</p>
+                    </div>
+                    <div class="step-card">
+                        <div class="step-number">3</div>
+                        <h4>蓝屏 (BSOD)</h4>
+                        <p>通常由 Wintun 驱动冲突引起。切换到 WFP 后蓝屏应消失，确保 Wintun 驱动已卸载。</p>
+                    </div>
+                    <div class="step-card">
+                        <div class="step-number">4</div>
+                        <h4>DNS 解析失效</h4>
+                        <p>检查 TUN 配置中 <code>dns-hijack</code> 是否包含 <code>any:53</code>，并确保 Fake‑IP 范围没有冲突。</p>
+                    </div>
+                </div>
+                <p>如果你在 WFP 模式下遇到奇怪的断网问题，可以在 Clash Verge Rev 的日志中搜索 “WFP” 关键词，定位具体错误。若系统事件查看器中出现 “BFE service” 相关错误，则可能是基础过滤引擎 (BFE) 被禁用。此时需要在服务中启用 “Base Filtering Engine” 并重启。</p>
+                <p>更详细的排错步骤可参阅 <a href="tun-no-internet-fix.html" target="_blank">TUN 模式断网排查</a> 一文，其中许多思路同样适用于 WFP。</p>
+
+                <h2 id="future">🔮 未来展望：WFP 与 eBPF</h2>
+                <p>WFP 是 Windows 专有技术，而 Linux 生态则通过 eBPF 实现类似的内核可编程性。Mihomo 内核团队正在探索在 Linux 上使用 eBPF 来实现透明代理的可能性，这将为 Linux 平台带来与 WFP 相媲美的低开销、无侵入代理体验。对于开发者来说，理解 WFP 的回调模型也有助于未来参与 eBPF 驱动的开发，两者在概念上高度相似。</p>
+                <p>如果你想深入研究 WFP 的底层细节，可以参考 <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/wiki" target="_blank" rel="noopener">GitHub Wiki 文档</a> 中的内核模块部分。同时，也欢迎在 <a href="https://github.com/Clashforwinodws/clash-verge-rev-download" target="_blank" rel="noopener">GitHub 仓库</a> 提交 Issue 或 PR，帮助改进 WFP 实现。</p>
+            </div>
+
+            <h3 style="font-size: 1.5rem; margin: 2.5rem 0 1rem;">📖 继续阅读</h3>
+            <div class="related-links">
+                <a href="../enable-tun.html" class="related-link-card">
+                    <h4>🔌 开启 TUN 模式</h4>
+                    <p>全局代理与虚拟网卡详解</p>
+                </a>
+                <a href="tun-no-internet-fix.html" class="related-link-card">
+                    <h4>🔧 TUN 断网排查</h4>
+                    <p>DNS 劫持冲突修复</p>
+                </a>
+                <a href="../dns.html" class="related-link-card">
+                    <h4>🌐 DNS 配置</h4>
+                    <p>加密 DNS 与防污染</p>
+                </a>
+                <a href="../rule.html" class="related-link-card">
+                    <h4>📋 Rule 模式</h4>
+                    <p>智能流量分流策略</p>
+                </a>
+                <a href="../mihomo.html" class="related-link-card">
+                    <h4>🧬 Mihomo 内核</h4>
+                    <p>内核架构与扩展</p>
+                </a>
+                <a href="../configuration.html" class="related-link-card">
+                    <h4>📘 配置教程</h4>
+                    <p>配置文件完全指南</p>
+                </a>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="main-wrapper">
+            <p>&copy; 2026 Clash Verge Rev 官网下载中心. 所有技术内容基于社区公开文档，仅供学习与测试。请遵守当地法律法规。</p>
+        </div>
+    </footer>
+
+</body>
+</html>
