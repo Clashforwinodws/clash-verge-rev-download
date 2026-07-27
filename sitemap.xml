@@ -179,4 +179,18 @@
         <changefreq>weekly</changefreq>
         <priority>0.6</priority>
     </url>
+
+     <url>
+        <loc>https://classhvverge.org/articles/migrate-from-cfw.html</loc>
+        <lastmod>2026-07-27</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.6</priority>
+    </url>
+
+         <url>
+        <loc>https://classhvverge.org/articles/why-tauri.html</loc>
+        <lastmod>2026-07-27</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.6</priority>
+    </url>
 </urlset>
