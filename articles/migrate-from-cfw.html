@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>从 Clash for Windows 迁移到 Clash Verge Rev · 完整避坑指南</title>
+    <meta name="description" content="Clash for Windows 停止更新后，切换到 Clash Verge Rev 成了必然。本指南不是干巴巴的步骤罗列，而是从配置差异、订阅处理、规则迁移、TUN 模式调到 DNS 防泄漏，每一步都带着你避开常见的坑，让你换客户端的过程比想象中顺利得多。">
+    <meta name="keywords" content="Clash for Windows 迁移, CFW 迁移, Clash Verge Rev 配置导入, 代理客户端切换, clash 配置文件兼容, CFW 停止维护">
+    <link rel="icon" type="image/x-icon" href="../favicon.ico">
+    <link rel="shortcut icon" type="image/x-icon" href="../favicon.ico">
+    <link rel="canonical" href="https://classhvverge.org/articles/migrate-from-cfw.html">
+    <link rel="stylesheet" href="../index2.css">
+    <!-- 结构化数据：TechArticle -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "TechArticle",
+      "headline": "从 Clash for Windows 迁移到 Clash Verge Rev：完整避坑指南",
+      "description": "详细对比 CFW 与 Clash Verge Rev 的配置、规则、TUN 模式与 DNS 设置差异，提供平滑迁移步骤与常见问题解决方案。",
+      "author": { "@type": "Organization", "name": "Clash Verge Rev 社区" },
+      "datePublished": "2026-07-27",
+      "dateModified": "2026-07-27",
+      "mainEntityOfPage": { "@type": "WebPage", "@id": "https://classhvverge.org/articles/migrate-from-cfw.html" }
+    }
+    </script>
+    <style>
+        :root {
+            --brand-dark: #0f172a;
+            --brand-blue: #3b82f6;
+            --brand-blue-hover: #2563eb;
+            --text-main: #334155;
+            --text-title: #1e293b;
+            --bg-light: #ffffff;
+            --bg-accent: #f8fafc;
+            --border-line: #cbd5e1;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+            --shadow-md: 0 8px 24px rgba(0,0,0,0.1);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            color: var(--text-main);
+            line-height: 1.75;
+            background-color: var(--bg-light);
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem 6%;
+            background: var(--brand-dark);
+            color: #ffffff;
+            position: sticky;
+            top: 0;
+            z-index: 2000;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #ffffff;
+            text-decoration: none;
+            flex-shrink: 0;
+        }
+        .logo img { width: auto; height: 38px; margin-right: 12px; display: block; }
+        .nav-box { display: flex; align-items: center; flex-wrap: wrap; gap: 0.75rem; }
+        nav { display: flex; align-items: center; flex-wrap: wrap; gap: 0.35rem; }
+        nav a {
+            margin-left: 0.5rem;
+            text-decoration: none;
+            color: #cbd5e1;
+            font-size: 0.93rem;
+            transition: color 0.2s;
+            white-space: nowrap;
+            padding: 0.25rem 0.35rem;
+            border-radius: 4px;
+        }
+        nav a:hover { color: var(--brand-blue); background-color: rgba(255,255,255,0.05); }
+        nav a.nav-active { color: var(--brand-blue); font-weight: 600; background-color: rgba(59,130,246,0.1); }
+        .github-btn {
+            display: inline-flex;
+            align-items: center;
+            background-color: var(--brand-blue);
+            color: #ffffff;
+            padding: 0.55rem 1.1rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            text-decoration: none;
+            margin-left: 1.5rem;
+            transition: background-color 0.2s;
+            font-weight: 500;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .github-btn:hover { background-color: var(--brand-blue-hover); }
+        .github-btn svg { width: 16px; height: 16px; margin-right: 6px; fill: currentColor; }
+
+        .article-wrapper { max-width: 860px; margin: 0 auto; padding: 3rem 6%; }
+        .article-header { text-align: center; padding: 3rem 0 2rem; }
+        .article-header h1 { font-size: 2.5rem; color: var(--brand-dark); margin-bottom: 1rem; line-height: 1.3; }
+        .article-meta {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            color: #64748b;
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+        .article-meta span { display: flex; align-items: center; gap: 0.3rem; }
+        .featured-image {
+            width: 100%; height: 300px;
+            background: #f1f5f9;
+            border: 2px dashed #94a3b8;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+            font-size: 0.95rem;
+            margin-bottom: 2.5rem;
+        }
+        .article-content h2 {
+            font-size: 1.9rem;
+            color: var(--brand-dark);
+            margin: 2.5rem 0 1rem;
+            border-left: 5px solid var(--brand-blue);
+            padding-left: 1rem;
+        }
+        .article-content h3 {
+            font-size: 1.5rem;
+            color: var(--text-title);
+            margin: 2rem 0 0.8rem;
+        }
+        .article-content p { margin-bottom: 1.2rem; font-size: 1.05rem; color: #334155; }
+        .code-block {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 1.5rem;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            margin: 1.5rem 0;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        .code-block .key { color: #93c5fd; }
+        .code-block .value { color: #fbbf24; }
+        .code-block .comment { color: #94a3b8; }
+        .tip-box {
+            background: #f0f9ff;
+            border-left: 5px solid var(--brand-blue);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+        }
+        .tip-box strong { color: #0f172a; }
+        .info-box {
+            background: #fff7ed;
+            border-left: 5px solid #f97316;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+        }
+        .info-box strong { color: #7c2d12; }
+        .steps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+        .step-card {
+            background: #fff;
+            border: 1px solid var(--border-line);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.2s;
+        }
+        .step-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+        .step-number {
+            display: inline-block;
+            width: 2.5rem;
+            height: 2.5rem;
+            background: var(--brand-dark);
+            color: #fff;
+            border-radius: 50%;
+            line-height: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.8rem;
+        }
+        .step-card h4 { margin-bottom: 0.5rem; color: var(--brand-dark); }
+        .step-card p { font-size: 0.9rem; color: #475569; }
+        .compare-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            border: 1px solid var(--border-line);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .compare-table th {
+            background: #f1f5f9;
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--brand-dark);
+        }
+        .compare-table td {
+            padding: 0.8rem 1rem;
+            border-top: 1px solid #e2e8f0;
+        }
+        .compare-table tr:hover { background: #f8fafc; }
+        .related-links {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+        .related-link-card {
+            background: #fff;
+            border: 1px solid var(--border-line);
+            border-radius: 10px;
+            padding: 1.2rem;
+            text-decoration: none;
+            color: var(--text-main);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .related-link-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+        .related-link-card h4 { font-size: 1.1rem; color: var(--brand-dark); margin-bottom: 0.3rem; }
+        .related-link-card p { font-size: 0.85rem; color: #64748b; }
+        .table-of-contents {
+            background: #f8fafc;
+            border: 1px solid var(--border-line);
+            border-radius: 10px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 2rem;
+        }
+        .table-of-contents h3 { margin-bottom: 0.8rem; font-size: 1.2rem; color: var(--brand-dark); }
+        .table-of-contents ul { list-style: none; columns: 2; column-gap: 2rem; }
+        .table-of-contents li { margin-bottom: 0.4rem; }
+        .table-of-contents a { color: var(--brand-blue); text-decoration: none; font-weight: 500; }
+        .table-of-contents a:hover { text-decoration: underline; }
+        footer {
+            background: #020617;
+            color: #94a3b8;
+            padding: 4rem 6%;
+            text-align: center;
+            font-size: 0.9rem;
+            border-top: 1px solid #1e293b;
+            margin-top: 3rem;
+        }
+        @media (max-width: 768px) {
+            header { flex-direction: column; gap: 1rem; padding: 1.25rem 5%; }
+            .nav-box { flex-direction: column; gap: 1rem; width: 100%; align-items: center; }
+            nav { justify-content: center; flex-wrap: wrap; gap: 0.4rem; }
+            nav a { margin: 0 0.3rem; font-size: 0.88rem; }
+            .github-btn { margin-left: 0; }
+            .article-header h1 { font-size: 1.9rem; }
+            .table-of-contents ul { columns: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="../index.html" class="logo">
+            <img src="../logo.webp" alt="Clash verge rev 官网" width="160" height="38">
+            <span>Clash Verge 官网</span>
+        </a>
+        <div class="nav-box">
+            <nav>
+                <a href="../download.html">客户端下载</a>
+                <a href="../install.html">安装教程</a>
+                <a href="../configuration.html">配置教程</a>
+                <a href="../faq.html">常见问题</a>
+                <a href="../changelog.html">更新日志</a>
+                <a href="index.html" class="nav-active">文章中心</a>
+                <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/wiki">📚 文档</a>
+            </nav>
+            <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/" class="github-btn" target="_blank" rel="noopener noreferrer">
+                <svg viewBox="0 0 16 16" version="1.1" aria-hidden="true"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+                GitHub 仓库
+            </a>
+        </div>
+    </header>
+
+    <main class="article-wrapper">
+        <article>
+            <div class="article-header">
+                <h1>从 Clash for Windows 迁移到 Clash Verge Rev</h1>
+                <div class="article-meta">
+                    <span>📅 2026-07-27</span>
+                    <span>🏷️ 迁移指南</span>
+                    <span>⏱️ 阅读约 13 分钟</span>
+                </div>
+            </div>
+
+            <div class="featured-image">
+                [ CFW 停止更新横幅 vs Clash Verge Rev 新界面 ]
+            </div>
+
+            <div class="table-of-contents">
+                <h3>📑 本文目录</h3>
+                <ul>
+                    <li><a href="#why-migrate">1. 为什么要换？CFW 已经停更很久了</a></li>
+                    <li><a href="#first-steps">2. 迁移前的准备：备份与清理</a></li>
+                    <li><a href="#config-transfer">3. 配置文件的无痛搬运</a></li>
+                    <li><a href="#rules-and-sub">4. 订阅与规则组的变化</a></li>
+                    <li><a href="#tun-and-dns">5. TUN 模式与 DNS 设置的差异</a></li>
+                    <li><a href="#ui-differences">6. 界面和操作习惯的适应</a></li>
+                    <li><a href="#common-errors">7. 迁移后容易踩的五个坑</a></li>
+                    <li><a href="#final-check">8. 最后的检查清单</a></li>
+                </ul>
+            </div>
+
+            <div class="article-content">
+                <h2 id="why-migrate">❓ 为什么要换？CFW 已经停更很久了</h2>
+                <p>如果你还在用 Clash for Windows (CFW)，应该已经注意到它的 GitHub 仓库很久没有实质性的代码更新了，连安全补丁都没有。CFW 的内核停留在旧版 Clash，而社区早已转向了 <a href="../mihomo.html" target="_blank">Mihomo（Clash Meta）</a> 内核。这意味着你没法用新的协议（比如 Hysteria2、VLESS），也享受不到 Fake‑IP 模式的诸多改进。再加上偶尔出现的 DNS 泄漏、老旧 Chromium 带来的内存问题，继续坚持真的没太大必要。</p>
+                <p>Clash Verge Rev 是目前社区里接替 CFW 的主流选择，基于 <a href="why-tauri.html" target="_blank">Tauri 框架</a> 构建，轻量、更新频繁，并且完美兼容你以前的配置文件格式。接下来我会带你一步步把 CFW 的东西搬到 Rev 上，整个过程大概十分钟，主要时间花在核对规则和调整一些默认行为上。</p>
+
+                <h2 id="first-steps">📦 迁移前的准备：备份与清理</h2>
+                <p>先别急着卸载 CFW。打开 CFW 的配置目录，默认在 <code>%USERPROFILE%\.config\clash</code> 或者 CFW 程序目录下的 <code>profiles</code> 文件夹。里面有你的所有配置文件（<code>config.yaml</code> 或 <code>xxx.yaml</code>）、订阅缓存、以及一些临时文件。把整个 <code>profiles</code> 文件夹复制到桌面备用。同时，记下你在 CFW 里常用的端口设置：HTTP 代理端口（默认 7890）、SOCKS5 端口（默认 7891）、以及 TUN 模式是否开启。</p>
+                <p>CFW 的“General”选项卡里还有一些设置，比如系统代理类型、是否允许局域网连接、日志级别等。最好截个图，等下在 Rev 里对应着配置，免得忘了原来是怎么设置的。如果你之前还手动改过 <code>config.yaml</code> 里的 <code>dns</code> 或 <code>tun</code> 相关参数，也一起记下来，因为 Rev 对这些字段有更严格的校验，马上会说到。</p>
+                <div class="tip-box">
+                    <strong>💡 建议：</strong> 不要急着删除 CFW，先保留一段时间作为对比。等确认 Rev 一切工作正常，再彻底卸载。卸载前记得关闭 CFW 的系统代理和开机启动，避免两个客户端同时抢端口。
+                </div>
+
+                <h2 id="config-transfer">📋 配置文件的无痛搬运</h2>
+                <p>好消息是，CFW 的配置文件几乎可以直接在 Rev 中使用。你可以在 Rev 的“配置”页面点击“新建” → “从文件导入”，选择你刚才备份的 <code>.yaml</code> 文件。或者直接把文件复制到 Rev 的配置目录（通常是 <code>%APPDATA%\clash-verge-rev\configs</code> 或 <code>~/.config/clash-verge-rev/configs</code>）。如果你用的是便携版，配置目录就在程序文件夹下。</p>
+                <p>不过这里有个小坑需要注意。CFW 允许一些“宽松”的 YAML 写法，比如缩进不一致、多余的注释、甚至 <code>proxies</code> 字段为空。但 Mihomo 内核对这些格式比较严格，导入时如果报错，先检查缩进，确保所有字段都是两个空格。还有一个常见问题是 <code>rule-providers</code> 语法：CFW 时代很多人没用过这个功能，如果你的配置里意外带了不规范的 rule-provider 定义，直接删掉就好，后续可以参照 <a href="rule-provider-guide.html" target="_blank">Rule Provider 实战</a> 重新配置。</p>
+                <p>导入成功后，在 Rev 的配置列表里点击刚才导入的文件，它会自动开始解析节点和规则。你会发现在节点列表里看到和 CFW 一模一样的代理信息。如果节点没显示出来，多半是配置文件的 <code>proxy-groups</code> 和 <code>proxies</code> 字段有拼写错误，可以看看 <a href="../configuration.html" target="_blank">配置教程</a> 里的完整对照表。</p>
+
+                <h2 id="rules-and-sub">🔄 订阅与规则组的变化</h2>
+                <p>CFW 的用户有很多人用的是机场订阅链接，直接从 URL 拉取配置。在 Rev 里，订阅管理被放到了更显眼的位置：“配置” → “新建” → “从 URL 导入”。粘贴你的 Clash 订阅链接后，Rev 会自动拉取并解析，同时你可以在“更新间隔”里设置自动更新的频率（比如 1440 分钟 = 每天）。这点比 CFW 的“Profile”管理要舒服一些，因为 Rev 把订阅和本地配置分得很清楚，你可以在一个界面里同时管理多个订阅和本地文件，随时切换。更多细节可以翻阅 <a href="../import-subscription.html" target="_blank">导入订阅指南</a>。</p>
+                <p>规则方面，如果你之前在 CFW 里用的是内联规则（直接写在 <code>rules</code> 段），那么迁移过来几乎不用改动。但如果你用了 CFW 不支持的 <code>RULE-SET</code> 或者打算开始使用规则集，Rev 是原生支持的。建议趁这次迁移，把那些冗长的域名列表单独抽成规则集，主配置文件会变得非常干净。操作方式在 <a href="rule-provider-guide.html" target="_blank">Rule Provider 文章</a> 里有完整示范。</p>
+
+                <h2 id="tun-and-dns">🔀 TUN 模式与 DNS 设置的差异</h2>
+                <p>CFW 的 TUN 模式需要单独安装驱动（Wintun），有时候还会和杀毒软件冲突。Rev 在这方面进步很大，TUN 堆栈支持 System、gVisor 和 WFP 三种模式，Windows 下推荐直接用 <strong>WFP</strong>，不需要安装任何驱动，兼容性也最好。如果你对 WFP 原理感兴趣，可以看那篇 <a href="windows-wfp.html" target="_blank">Windows WFP 文章</a>。迁移过来后，你可以在“设置” → “TUN 模式”里直接开启，不用再单独下载任何东西。</p>
+                <p>DNS 部分需要特别注意。CFW 默认的 DNS 模式是“redir‑host”，而 Rev 强烈推荐使用 <strong>Fake‑IP</strong>。如果你直接导入 CFW 的配置，里面的 <code>dns</code> 段可能仍然保留了 <code>enhanced-mode: redir-host</code>。建议把它改成 <code>fake-ip</code>，并补上 <code>fake-ip-range: 198.18.0.1/16</code> 和 <code>fake-ip-filter</code>。这能杜绝 DNS 泄漏，体验上的区别可以参考 <a href="../dns.html" target="_blank">DNS 配置指南</a> 和 <a href="fake-ip-deep-dive.html" target="_blank">Fake‑IP 深度解析</a>。</p>
+                <p>一个很具体的小细节：CFW 的 <code>dns</code> 字段里 <code>nameserver</code> 通常写成 <code>114.114.114.114</code> 或 <code>223.5.5.5</code>，这在国内没问题，但在 Fake‑IP 模式下，建议换成 DoH 地址，比如 <code>https://doh.pub/dns-query</code>。因为 Fake‑IP 模式会把所有 DNS 查询都通过代理发出去，如果上游 DNS 是明文的，你的运营商还是会知道你在解析什么域名。</p>
+
+                <h2 id="ui-differences">🖱️ 界面和操作习惯的适应</h2>
+                <p>CFW 的用户可能习惯了那个经典的深色界面和侧边栏布局。Rev 的界面相比之下更现代一些，但核心逻辑是相通的。左侧导航从“General”、“Proxies”、“Profiles”变成了“代理”、“配置”、“日志”、“连接”、“DNS”等。节点切换在“代理”页面，和 CFW 的“Proxies”几乎一样，支持点击切换、策略组、延迟测试。</p>
+                <p>一个容易被忽略的小功能：Rev 的“连接”面板是 CFW 没有的（需要 v2.5.2 或更新版，参看 <a href="v2.5.2-highlights.html" target="_blank">v2.5.2 新特性</a>）。它可以实时显示每条连接的流量信息、命中了哪条规则、用了哪个节点。这个在调试规则是否生效时非常有用，强烈建议迁移后先点开看看，确认你访问的网站是不是真的走了预期的代理。</p>
+                <p>托盘菜单也稍有不同。CFW 的右键菜单里可以直接切换代理模式、打开文件夹；Rev 把这些选项放在了“设置”或“托盘图标右键”里，熟悉一下就好。还有，Rev 的开机启动在“设置”里可以独立开启，和 CFW 一样。</p>
+
+                <h2 id="common-errors">⚠️ 迁移后容易踩的五个坑</h2>
+                <p>迁移过程中，我在自己和朋友们的电脑上遇到过下面这些典型问题，提前知道能省不少时间：</p>
+                <table class="compare-table">
+                    <tr><th>问题现象</th><th>原因</th><th>解决办法</th></tr>
+                    <tr><td>导入配置后没有节点</td><td>配置文件里 <code>proxies</code> 字段为空，或缩进错误导致 Mihomo 解析失败</td><td>检查 YAML 缩进，确保每个 <code>proxies</code> 项以 <code>- name:</code> 开头且缩进正确</td></tr>
+                    <tr><td>开启 TUN 后断网</td><td>CFW 遗留的 Wintun 驱动与 Rev 的 WFP 冲突</td><td>先卸载 CFW 的 TUN 驱动：设备管理器 → 网络适配器 → 卸载 Wintun；然后在 Rev 中重新开启 TUN</td></tr>
+                    <tr><td>部分网站走了直连但规则里写了代理</td><td>CFW 的规则排列顺序和 GEOIP 优先级不同</td><td>在 Rev 的规则列表里，把自定义规则放在 GEOIP 前面，或使用连接面板排查命中情况</td></tr>
+                    <tr><td>局域网设备无法共享代理</td><td>CFW 的“Allow LAN”选项在 Rev 里叫“允许局域网连接”，默认关闭</td><td>在 Rev 设置中开启“允许局域网连接”，并确保防火墙放行 7890 端口</td></tr>
+                    <tr><td>CFW 的旧脚本（如 PAC 文件）不工作</td><td>CFW 生成的 PAC 文件依赖于 CFW 的进程名</td><td>放弃 PAC，改用 TUN 模式或系统代理，或者在 Rev 的配置中自定义规则</td></tr>
+                </table>
+                <p>上面这些坑大多是因为新内核对格式更严格，或者一些历史遗留的驱动冲突。遇到问题时，先看看 <a href="../faq.html" target="_blank">常见问题</a> 页面，很可能已经有了现成的答案。</p>
+
+                <h2 id="final-check">✅ 最后的检查清单</h2>
+                <p>迁移完成后，按下面这个清单逐项确认一下：</p>
+                <ol style="margin: 1rem 0 1.5rem 1.5rem;">
+                    <li>✅ 代理节点能正常测速，延迟显示正常。</li>
+                    <li>✅ 浏览器能访问 Google、YouTube 等网站。</li>
+                    <li>✅ 打开 <a href="https://ipleak.net" target="_blank" rel="noopener">ipleak.net</a>，检查 DNS 和 WebRTC 没有泄漏（DNS 应显示你配置的加密服务器 IP）。</li>
+                    <li>✅ TUN 模式开启后，命令行 <code>ping google.com</code> 能通（Fake‑IP 下会返回 198.18.x.x）。</li>
+                    <li>✅ 系统重启后，Rev 能自动启动并恢复代理（如果设置了开机自启）。</li>
+                    <li>✅ 局域网共享（如果需要）能正常工作，手机连上本机代理后可以上外网。</li>
+                </ol>
+                <p>等这些都没问题了，就可以卸载 CFW 了。卸载前记得在 CFW 里关闭系统代理和开机启动，然后从控制面板正常卸载。如果之前装过 Wintun 驱动，可以顺带在设备管理器里删除。</p>
+                <p>迁移其实比想象中简单，多数人的配置可以无缝过渡。花点时间把规则集和 Fake‑IP 理顺，后面的体验会比 CFW 时代强很多。如果你还发现了其他迁移过程中的奇葩问题，欢迎到 <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/wiki" target="_blank" rel="noopener">GitHub Wiki</a> 交流，也许能帮到下一个迁移的人。</p>
+            </div>
+
+            <h3 style="font-size: 1.5rem; margin: 2.5rem 0 1rem;">📖 继续阅读</h3>
+            <div class="related-links">
+                <a href="../configuration.html" class="related-link-card">
+                    <h4>📘 配置教程</h4>
+                    <p>配置文件完全解析</p>
+                </a>
+                <a href="../import-subscription.html" class="related-link-card">
+                    <h4>📥 导入订阅</h4>
+                    <p>订阅链接的管理与自动更新</p>
+                </a>
+                <a href="../rule.html" class="related-link-card">
+                    <h4>📋 Rule 模式</h4>
+                    <p>规则匹配与分流逻辑</p>
+                </a>
+                <a href="../dns.html" class="related-link-card">
+                    <h4>🌐 DNS 配置</h4>
+                    <p>加密 DNS 与防污染</p>
+                </a>
+                <a href="../enable-tun.html" class="related-link-card">
+                    <h4>🔌 开启 TUN 模式</h4>
+                    <p>全局代理与虚拟网卡</p>
+                </a>
+                <a href="../faq.html" class="related-link-card">
+                    <h4>❓ 常见问题</h4>
+                    <p>安装与使用排错技巧</p>
+                </a>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="main-wrapper">
+            <p>&copy; 2026 Clash Verge Rev 官网下载中心. 所有技术内容基于社区公开文档，仅供学习与测试。请遵守当地法律法规。</p>
+        </div>
+    </footer>
+
+</body>
+</html>
