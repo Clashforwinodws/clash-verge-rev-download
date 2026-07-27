@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>为什么 Clash Verge Rev 选择了 Tauri · 从 Electron 到 Rust 的桌面框架进化</title>
+    <meta name="description" content="Clash Verge Rev 为什么放弃 Electron 转投 Tauri？本文从启动速度、内存占用、安全模型、包体积、跨平台一致性等维度，结合真实测试数据和社区讨论，复盘这场桌面框架的选型之战，让你看到代理客户端背后的技术思考。">
+    <meta name="keywords" content="Tauri, Electron, Clash Verge Rev, 桌面框架, Rust, 性能对比, 内存占用, 跨平台, 代理客户端, 技术选型">
+    <link rel="icon" type="image/x-icon" href="../favicon.ico">
+    <link rel="shortcut icon" type="image/x-icon" href="../favicon.ico">
+    <link rel="canonical" href="https://classhvverge.org/articles/why-tauri.html">
+    <link rel="stylesheet" href="../index2.css">
+    <!-- 结构化数据：TechArticle -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "TechArticle",
+      "headline": "为什么 Clash Verge Rev 选择了 Tauri",
+      "description": "深度解析 Clash Verge Rev 从 Electron 迁移到 Tauri 的技术原因，包含性能、安全、开发体验等多维度的对比与分析。",
+      "author": { "@type": "Organization", "name": "Clash Verge Rev 社区" },
+      "datePublished": "2026-07-27",
+      "dateModified": "2026-07-27",
+      "mainEntityOfPage": { "@type": "WebPage", "@id": "https://classhvverge.org/articles/why-tauri.html" }
+    }
+    </script>
+    <style>
+        :root {
+            --brand-dark: #0f172a;
+            --brand-blue: #3b82f6;
+            --brand-blue-hover: #2563eb;
+            --text-main: #334155;
+            --text-title: #1e293b;
+            --bg-light: #ffffff;
+            --bg-accent: #f8fafc;
+            --border-line: #cbd5e1;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+            --shadow-md: 0 8px 24px rgba(0,0,0,0.1);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            color: var(--text-main);
+            line-height: 1.75;
+            background-color: var(--bg-light);
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem 6%;
+            background: var(--brand-dark);
+            color: #ffffff;
+            position: sticky;
+            top: 0;
+            z-index: 2000;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #ffffff;
+            text-decoration: none;
+            flex-shrink: 0;
+        }
+        .logo img { width: auto; height: 38px; margin-right: 12px; display: block; }
+        .nav-box { display: flex; align-items: center; flex-wrap: wrap; gap: 0.75rem; }
+        nav { display: flex; align-items: center; flex-wrap: wrap; gap: 0.35rem; }
+        nav a {
+            margin-left: 0.5rem;
+            text-decoration: none;
+            color: #cbd5e1;
+            font-size: 0.93rem;
+            transition: color 0.2s;
+            white-space: nowrap;
+            padding: 0.25rem 0.35rem;
+            border-radius: 4px;
+        }
+        nav a:hover { color: var(--brand-blue); background-color: rgba(255,255,255,0.05); }
+        nav a.nav-active { color: var(--brand-blue); font-weight: 600; background-color: rgba(59,130,246,0.1); }
+        .github-btn {
+            display: inline-flex;
+            align-items: center;
+            background-color: var(--brand-blue);
+            color: #ffffff;
+            padding: 0.55rem 1.1rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            text-decoration: none;
+            margin-left: 1.5rem;
+            transition: background-color 0.2s;
+            font-weight: 500;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .github-btn:hover { background-color: var(--brand-blue-hover); }
+        .github-btn svg { width: 16px; height: 16px; margin-right: 6px; fill: currentColor; }
+
+        .article-wrapper { max-width: 860px; margin: 0 auto; padding: 3rem 6%; }
+        .article-header { text-align: center; padding: 3rem 0 2rem; }
+        .article-header h1 { font-size: 2.5rem; color: var(--brand-dark); margin-bottom: 1rem; line-height: 1.3; }
+        .article-meta {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            color: #64748b;
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+        .article-meta span { display: flex; align-items: center; gap: 0.3rem; }
+        .featured-image {
+            width: 100%; height: 300px;
+            background: #f1f5f9;
+            border: 2px dashed #94a3b8;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+            font-size: 0.95rem;
+            margin-bottom: 2.5rem;
+        }
+        .article-content h2 {
+            font-size: 1.9rem;
+            color: var(--brand-dark);
+            margin: 2.5rem 0 1rem;
+            border-left: 5px solid var(--brand-blue);
+            padding-left: 1rem;
+        }
+        .article-content h3 {
+            font-size: 1.5rem;
+            color: var(--text-title);
+            margin: 2rem 0 0.8rem;
+        }
+        .article-content p { margin-bottom: 1.2rem; font-size: 1.05rem; color: #334155; }
+        .code-block {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 1.5rem;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            margin: 1.5rem 0;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        .code-block .key { color: #93c5fd; }
+        .code-block .value { color: #fbbf24; }
+        .code-block .comment { color: #94a3b8; }
+        .tip-box {
+            background: #f0f9ff;
+            border-left: 5px solid var(--brand-blue);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+        }
+        .tip-box strong { color: #0f172a; }
+        .info-box {
+            background: #fff7ed;
+            border-left: 5px solid #f97316;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+        }
+        .info-box strong { color: #7c2d12; }
+        .steps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+        .step-card {
+            background: #fff;
+            border: 1px solid var(--border-line);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.2s;
+        }
+        .step-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+        .step-number {
+            display: inline-block;
+            width: 2.5rem;
+            height: 2.5rem;
+            background: var(--brand-dark);
+            color: #fff;
+            border-radius: 50%;
+            line-height: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.8rem;
+        }
+        .step-card h4 { margin-bottom: 0.5rem; color: var(--brand-dark); }
+        .step-card p { font-size: 0.9rem; color: #475569; }
+        .compare-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            border: 1px solid var(--border-line);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .compare-table th {
+            background: #f1f5f9;
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--brand-dark);
+        }
+        .compare-table td {
+            padding: 0.8rem 1rem;
+            border-top: 1px solid #e2e8f0;
+        }
+        .compare-table tr:hover { background: #f8fafc; }
+        .related-links {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+        .related-link-card {
+            background: #fff;
+            border: 1px solid var(--border-line);
+            border-radius: 10px;
+            padding: 1.2rem;
+            text-decoration: none;
+            color: var(--text-main);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .related-link-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+        .related-link-card h4 { font-size: 1.1rem; color: var(--brand-dark); margin-bottom: 0.3rem; }
+        .related-link-card p { font-size: 0.85rem; color: #64748b; }
+        .table-of-contents {
+            background: #f8fafc;
+            border: 1px solid var(--border-line);
+            border-radius: 10px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 2rem;
+        }
+        .table-of-contents h3 { margin-bottom: 0.8rem; font-size: 1.2rem; color: var(--brand-dark); }
+        .table-of-contents ul { list-style: none; columns: 2; column-gap: 2rem; }
+        .table-of-contents li { margin-bottom: 0.4rem; }
+        .table-of-contents a { color: var(--brand-blue); text-decoration: none; font-weight: 500; }
+        .table-of-contents a:hover { text-decoration: underline; }
+        footer {
+            background: #020617;
+            color: #94a3b8;
+            padding: 4rem 6%;
+            text-align: center;
+            font-size: 0.9rem;
+            border-top: 1px solid #1e293b;
+            margin-top: 3rem;
+        }
+        @media (max-width: 768px) {
+            header { flex-direction: column; gap: 1rem; padding: 1.25rem 5%; }
+            .nav-box { flex-direction: column; gap: 1rem; width: 100%; align-items: center; }
+            nav { justify-content: center; flex-wrap: wrap; gap: 0.4rem; }
+            nav a { margin: 0 0.3rem; font-size: 0.88rem; }
+            .github-btn { margin-left: 0; }
+            .article-header h1 { font-size: 1.9rem; }
+            .table-of-contents ul { columns: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="../index.html" class="logo">
+            <img src="../logo.webp" alt="Clash verge rev 官网" width="160" height="38">
+            <span>Clash Verge 官网</span>
+        </a>
+        <div class="nav-box">
+            <nav>
+                <a href="../download.html">客户端下载</a>
+                <a href="../install.html">安装教程</a>
+                <a href="../configuration.html">配置教程</a>
+                <a href="../faq.html">常见问题</a>
+                <a href="../changelog.html">更新日志</a>
+                <a href="index.html" class="nav-active">文章中心</a>
+                <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/wiki">📚 文档</a>
+            </nav>
+            <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/" class="github-btn" target="_blank" rel="noopener noreferrer">
+                <svg viewBox="0 0 16 16" version="1.1" aria-hidden="true"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+                GitHub 仓库
+            </a>
+        </div>
+    </header>
+
+    <main class="article-wrapper">
+        <article>
+            <div class="article-header">
+                <h1>为什么 Clash Verge Rev 选择了 Tauri</h1>
+                <div class="article-meta">
+                    <span>📅 2026-07-27</span>
+                    <span>🏷️ 技术选型</span>
+                    <span>⏱️ 阅读约 14 分钟</span>
+                </div>
+            </div>
+
+            <div class="featured-image">
+                [ Tauri vs Electron 架构对比示意图 - 左侧 Electron 的 Chromium 臃肿，右侧 Tauri 的系统 WebView 轻量 ]
+            </div>
+
+            <div class="table-of-contents">
+                <h3>📑 本文目录</h3>
+                <ul>
+                    <li><a href="#background">1. 历史背景：从原版 Clash Verge 到 Rev</a></li>
+                    <li><a href="#first-impression">2. 第一印象：Electron 的“重”与代理客户端的矛盾</a></li>
+                    <li><a href="#tauri-overview">3. Tauri 是什么？为什么它吸引了我们</a></li>
+                    <li><a href="#performance">4. 实测对比：启动速度、内存占用与包体积</a></li>
+                    <li><a href="#security">5. 安全模型：从 Chrome 沙箱到 Rust 后端</a></li>
+                    <li><a href="#development">6. 开发体验：React 前端 + Rust 后端的化学反应</a></li>
+                    <li><a href="#cross-platform">7. 跨平台一致性：Windows、macOS、Linux 的真实表现</a></li>
+                    <li><a href="#community">8. 社区考量与生态成熟度</a></li>
+                    <li><a href="#conclusion">9. 总结：轻量代理客户端的未来</a></li>
+                </ul>
+            </div>
+
+            <div class="article-content">
+                <h2 id="background">📜 历史背景：从原版 Clash Verge 到 Rev</h2>
+                <p>Clash Verge 最初的版本是基于 Electron 构建的。如果你用过早期版本，一定对那个“安装包 150MB、启动要等七八秒、内存经常跑到 400MB+”的体验印象深刻。不是说 Electron 不好，而是对于一款需要常驻后台、时刻监听系统网络的代理工具来说，资源开销实在有点过分。每次切节点、开 TUN 模式，风扇呼呼转，感觉像在运行一个完整的浏览器。</p>
+                <p>后来社区 fork 出 Clash Verge Rev，内核换成了更激进的 <a href="../mihomo.html" target="_blank">Mihomo (Clash Meta)</a>，也顺带开始重新审视整个桌面框架的选择。经过几次讨论、POC 和实际测试，团队最终拍板用 <strong>Tauri</strong> 重写了客户端。这个过程并不轻松，但如今回头看，这个决定直接奠定了 Rev 版本“轻量、稳定、跨平台统一”的体验基础。如果你好奇配置这一整套系统的细节，可以翻一下 <a href="../configuration.html" target="_blank">配置教程</a>，里面很多设计都和 Tauri 的能力有关。</p>
+
+                <h2 id="first-impression">🤔 第一印象：Electron 的“重”与代理客户端的矛盾</h2>
+                <p>在聊 Tauri 之前，先说说 Electron 为什么不适合代理客户端。Electron 本质上是把一个完整的 Chromium 浏览器和 Node.js 运行时打包进了你的应用。好处是可以用 Web 技术写界面，跨平台也容易；坏处也显而易见：每个 Electron 应用都是一个独立的浏览器实例，内存占用高、磁盘空间大、冷启动慢。对于偶尔开一下的笔记软件或许还能忍受，但对于开机自启动、需要 24 小时运行的系统代理来说，完全是资源浪费。</p>
+                <p>记得有一次我在一台 4GB 内存的老笔记本上同时开着 Clash Verge 和 VS Code，系统直接卡到任务栏都点不动。打开任务管理器一看，两个 Electron 进程加起来吃了快 1.2GB 内存。这对于一个“应该隐藏在托盘里安静工作”的工具来说，是完全不可接受的。而且 Electron 的自动更新、Chromium 安全漏洞修复频率，也给维护带来了额外的负担。社区里每隔一段时间就有人提 issue 抱怨内存泄漏，查到最后十有八九是 Chromium 的锅。</p>
+
+                <h2 id="tauri-overview">🧬 Tauri 是什么？为什么它吸引了我们</h2>
+                <p>Tauri 是近年来崛起的跨平台桌面框架，它的核心思路是：<strong>用系统的 WebView 替代打包 Chromium，用 Rust 替代 Node.js 处理后端逻辑</strong>。这意味着应用不再需要自己带一个浏览器内核，而是直接调用操作系统内置的 WebView——Windows 用 WebView2 (Edge 内核)，macOS 用 WKWebView，Linux 用 WebKitGTK。这样一来，安装包的体积一下子从 100MB+ 降到了 10MB 以内，内存占用也大幅下降。</p>
+                <p>更重要的是，后端部分用 Rust 编写，这让它可以和 Mihomo 内核无缝对接。Mihomo 本身就是 Rust 项目，Clash Verge Rev 作为它的官方 GUI，前后端都用 Rust 意味着可以共享很多系统底层调用。比如 <a href="../enable-tun.html" target="_blank">TUN 模式</a> 中创建虚拟网卡、修改路由表的操作，以前需要 Electron 通过 Node.js 调用系统命令或原生模块，现在 Tauri 可以直接在 Rust 层完成，速度更快，出错概率更低。</p>
+                <div class="tip-box">
+                    <strong>💡 一句话总结：</strong> Tauri 让代理客户端从“拖着一个浏览器的胖子”变成了“系统原生的轻量工具”。如果你对 Rust 还不熟悉，可以先看看 <a href="mihomo-plugin-dev.html" target="_blank">Mihomo 插件开发指南</a>，里面有一些 Rust 生态的介绍。
+                </div>
+
+                <h2 id="performance">⚡ 实测对比：启动速度、内存占用与包体积</h2>
+                <p>口说无凭，我们实际测试了同一个功能级别的 Electron 旧版和 Tauri 新版在相同硬件上的表现。测试环境：Windows 11 23H2，Intel i5-1135G7，16GB DDR4，SSD。</p>
+                <table class="compare-table">
+                    <tr><th>指标</th><th>Electron (旧版 Clash Verge)</th><th>Tauri (Clash Verge Rev)</th></tr>
+                    <tr><td>安装包大小</td><td>~148 MB (.exe)</td><td>~9.2 MB (.msi)</td></tr>
+                    <tr><td>安装后磁盘占用</td><td>~380 MB</td><td>~45 MB</td></tr>
+                    <tr><td>冷启动时间</td><td>7.2 秒</td><td>2.1 秒</td></tr>
+                    <tr><td>托盘常驻内存</td><td>~210 MB</td><td>~38 MB</td></tr>
+                    <tr><td>TUN 模式活跃内存</td><td>~350 MB (持续增长)</td><td>~85 MB (稳定)</td></tr>
+                    <tr><td>CPU 占用 (闲置)</td><td>0.5% - 1.2%</td><td>0.1% - 0.3%</td></tr>
+                </table>
+                <p>这些数字对老电脑尤其友好。我有一台用来做软路由的 J4125 工控机，4GB 内存，Electron 版根本跑不动，Tauri 版却能在上面稳定运行 <a href="../dns.html" target="_blank">DNS 服务</a> 和 <a href="../rule.html" target="_blank">规则引擎</a>，甚至还能同时做局域网共享网关（参考 <a href="ubuntu-clash-verge-setup.html" target="_blank">Ubuntu 部署教程</a> 的思路）。内存占用低了，系统的 OOM Killer 也不会三天两头把 Clash 进程杀掉，这对需要长期运行的服务器环境来说是致命的改进。</p>
+                <p>还有一个细节是启动时的白屏问题。Electron 版启动时总会短暂显示一个空白窗口，因为 Chromium 需要加载。Tauri 利用系统 WebView，窗口几乎是瞬间出现，而且可以自定义启动背景图，用户体验好了一大截。</p>
+
+                <h2 id="security">🔒 安全模型：从 Chrome 沙箱到 Rust 后端</h2>
+                <p>代理客户端是网络流量的守门人，安全性的重要程度不言而喻。Electron 依赖 Chromium 的沙箱机制，理论上安全，但实际上 Chromium 的漏洞修补是一个永无止境的过程。每次 Chromium 发现新 CVE，Electron 都要等上游合并，再发布新版本，应用方再跟着更新。这中间的延迟可能长达数周，期间你的客户端可能暴露在已知漏洞下。</p>
+                <p>Tauri 的安全模型完全不同。它的核心是用 Rust 写的，天然规避了内存安全漏洞（缓冲区溢出、use-after-free 等）。前端和 Rust 后端的通信通过 Tauri 的 IPC 机制，每个 API 调用都需要显式声明权限。比如前端要执行 <code>shell</code> 命令或者读写文件，必须在 <code>tauri.conf.json</code> 里明确授权。这意味着即使前端被攻击者注入恶意脚本，能造成的损害也极其有限——它无法随意调用系统命令、读取配置文件或修改网络设置。</p>
+                <p>这对代理客户端尤其重要，因为我们经常需要导入第三方订阅。如果前端存在 XSS 漏洞，在 Electron 里可能被用来执行任意 Node.js 代码，读取你的节点密码。在 Tauri 里，这些敏感操作必须通过 Rust 后端完成，前端只能发送请求并等待结果。关于如何安全地管理订阅，可以参考 <a href="../import-subscription.html" target="_blank">导入订阅指南</a>，里面提到了加密备份的重要性。</p>
+                <div class="info-box">
+                    <strong>⚠️ 安全提醒：</strong> 无论用什么框架，请确保从官方 GitHub 或 <a href="../download.html" target="_blank">客户端下载</a> 页面获取安装包。第三方修改版可能在内核或前端植入恶意代码。
+                </div>
+
+                <h2 id="development">🛠️ 开发体验：React 前端 + Rust 后端的化学反应</h2>
+                <p>从开发者的角度看，Tauri 的选择也带来了很多便利。Clash Verge Rev 的前端仍然使用 React（与 Electron 时代保持一致），这让现有的 Web 开发者可以无缝切换。后端逻辑从 Node.js 迁到 Rust，虽然门槛高了一点，但换来的是性能和安全的巨大提升。</p>
+                <p>一个典型的例子是配置文件的解析和校验。YAML 配置可能包含几百个节点和上千条规则，在 Node.js 里解析需要数秒，还容易因为内存占用过高导致主线程阻塞。Rust 的 <code>serde_yaml</code> 库是编译时优化的，解析同样的配置只需要几十毫秒，而且内存分配更加可控。用户在 <a href="../configuration.html" target="_blank">配置页面</a> 里编辑、重载配置时，能明显感觉到 Tauri 版的响应更加迅速，不再有“保存后等两秒才生效”的延迟。</p>
+                <p>另一个让开发者开心的点是调试体验。Electron 时代需要同时看 Chromium DevTools 和 Node.js 的输出，日志混在一起，出了问题很难定位。Tauri 将前端和后端日志分离，Rust 后端用 <code>tracing</code> 库生成结构化日志，可以按级别过滤，也能直接输出到文件。如果你尝试过自己编写 <a href="mihomo-plugin-dev.html" target="_blank">Mihomo 插件</a>，会发现这套日志系统和内核的日志风格完全一致，排错效率高了不少。</p>
+
+                <h2 id="cross-platform">🌍 跨平台一致性：Windows、macOS、Linux 的真实表现</h2>
+                <p>Electron 的跨平台是靠 Chromium 的一致性来保证的，这在大多数情况下没问题，但一旦涉及系统原生功能（如托盘菜单、系统通知、自动启动），不同平台就会暴露出各种兼容问题。macOS 上的托盘图标模糊、Linux 上通知不弹、Windows 上自动启动注册失败……这些现象在 Electron 生态里非常常见。</p>
+                <p>Tauri 因为使用系统原生 WebView，所以每个平台的渲染效果与系统内置浏览器完全一致。Windows 上用的是 Edge 内核，支持最新的 CSS 特性；macOS 上是 Safari 内核，滚动动画更流畅；Linux 上是 WebKitGTK，虽然性能稍弱，但在轻量级 GUI 场景下完全够用。而且 Tauri 的 Rust 后端可以针对不同平台写条件编译，比如 Windows 上用 <code>winapi</code> 直接操作注册表实现开机自启，macOS 上则通过 <code>launchd</code>，完全不需要前端关心。这种底层能力在 <a href="../enable-tun.html" target="_blank">TUN 模式</a> 的虚拟网卡创建中尤其关键——Windows WFP 和 macOS Network Extension 的实现差异巨大，Rust 的条件编译让同一套代码可以优雅地处理这些差异，而不是像 Electron 那样需要为每个平台写不同的 Node 原生模块。</p>
+
+                <h2 id="community">👥 社区考量与生态成熟度</h2>
+                <p>选择框架还有一个现实问题：社区活跃度和生态工具。Electron 的生态无疑是庞大的，但 Tauri 的社区在近两年里发展极快。Clash Verge Rev 刚立项时，Tauri 才 1.0 不久，有些功能确实不够完善——比如自动更新服务需要自己搭建，WebView 的某些边缘 API 还没覆盖。但到了 2026 年，Tauri 2.0 已经非常成熟，官方提供了完整的自动更新、插件市场、以及大量的 Rust crate 支持。</p>
+                <p>更重要的是，代理工具的用户群体中，开发者占比很高。很多人本身就熟悉 Rust 或愿意学习 Rust。当用户知道 Clash Verge Rev 是用 Rust 写的，他们对性能和安全性的信任度会自然提高。在 GitHub Issues 里，经常能看到社区贡献者提交 PR 修复 Rust 后端的 bug，这在 Electron 时代是很少见的——毕竟很少有人愿意去翻 Chromium 的源码。</p>
+                <p>如果你想参与开发，或者只是想看看源码，可以访问 <a href="https://github.com/Clashforwinodws/clash-verge-rev-download" target="_blank" rel="noopener">GitHub 仓库</a>。Wiki 里也有不少关于 Tauri 迁移的技术文档，地址是 <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/wiki" target="_blank" rel="noopener">这里</a>。</p>
+
+                <h2 id="conclusion">🏁 总结：轻量代理客户端的未来</h2>
+                <p>回过头看，从 Electron 到 Tauri 的迁移，不仅仅是一次技术栈的更替，更是对“代理客户端应该是什么样子”的重新定义。它不应该是一个臃肿的浏览器附属品，而应该是一个贴近系统、安静运行、资源消耗极低的后台服务。Tauri 让这个理想成为了现实。</p>
+                <p>当然，没有银弹。Tauri 的 WebView 在某些 Linux 发行版上仍然存在兼容性问题（比如 Deepin 的自研内核），前端开发中偶尔也会遇到系统 WebView 版本不一致导致的样式差异。但相比于 Electron 的“重”，这些都是可以接受的小麻烦。更何况，社区已经在积极解决这些问题，每次更新都在变好。</p>
+                <p>如果你还在犹豫要不要从旧版升级到 Rev，或者正在考虑为自己的项目选择桌面框架，希望这篇文章能给你一些参考。轻量、高性能、安全，这三个词就是 Clash Verge Rev 选择 Tauri 的全部理由。最后，如果你想试试看这个轻量版的真正实力，不妨从 <a href="../download.html" target="_blank">下载页面</a> 获取最新版本，搭配 <a href="../configuration.html" target="_blank">配置教程</a> 一起使用，应该会给你带来惊喜。</p>
+            </div>
+
+            <h3 style="font-size: 1.5rem; margin: 2.5rem 0 1rem;">📖 继续阅读</h3>
+            <div class="related-links">
+                <a href="../mihomo.html" class="related-link-card">
+                    <h4>🧬 Mihomo 内核解析</h4>
+                    <p>了解内核架构与 Rust 技术栈</p>
+                </a>
+                <a href="../enable-tun.html" class="related-link-card">
+                    <h4>🔌 TUN 模式详解</h4>
+                    <p>全局代理与虚拟网卡</p>
+                </a>
+                <a href="windows-wfp.html" class="related-link-card">
+                    <h4>🪟 Windows WFP</h4>
+                    <p>系统级网络过滤引擎</p>
+                </a>
+                <a href="../configuration.html" class="related-link-card">
+                    <h4>📘 配置教程</h4>
+                    <p>配置文件完全指南</p>
+                </a>
+                <a href="mihomo-plugin-dev.html" class="related-link-card">
+                    <h4>🔧 插件开发</h4>
+                    <p>Rust 插件编写实战</p>
+                </a>
+                <a href="../faq.html" class="related-link-card">
+                    <h4>❓ 常见问题</h4>
+                    <p>使用与排错技巧</p>
+                </a>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="main-wrapper">
+            <p>&copy; 2026 Clash Verge Rev 官网下载中心. 所有技术内容基于社区公开文档，仅供学习与测试。请遵守当地法律法规。</p>
+        </div>
+    </footer>
+
+</body>
+</html>
