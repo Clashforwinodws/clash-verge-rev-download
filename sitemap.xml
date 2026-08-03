@@ -193,4 +193,18 @@
         <changefreq>weekly</changefreq>
         <priority>0.6</priority>
     </url>
+
+     <url>
+        <loc>https://classhvverge.org/articles/yaml-why-not-dead.html</loc>
+        <lastmod>2026-08-03</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.6</priority>
+    </url>
+
+         <url>
+        <loc>https://classhvverge.org/articles/stash-vs-clashverge.html</loc>
+        <lastmod>2026-08-03</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.6</priority>
+    </url>
 </urlset>
