@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>为什么 YAML 一直没有被淘汰 · 从 Clash 配置说开去</title>
+    <meta name="description" content="YAML 因为缩进和空格挨了无数骂，但 Clash Verge Rev 的配置、Kubernetes、Ansible 还在大量使用它。本文从真实的使用场景出发，聊 YAML 的语法陷阱、多行字符串技巧、锚点复用，以及它为什么比 JSON 更“扛打”——特别是当你需要维护几百条代理规则的时候。">
+    <meta name="keywords" content="YAML, 配置文件, Clash 配置, JSON, TOML, 数据序列化, 语法技巧, 锚点, 多行字符串">
+    <link rel="icon" type="image/x-icon" href="../favicon.ico">
+    <link rel="shortcut icon" type="image/x-icon" href="../favicon.ico">
+    <link rel="canonical" href="https://classhvverge.org/articles/yaml-why-not-dead.html">
+    <link rel="stylesheet" href="../index2.css">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "TechArticle",
+      "headline": "为什么 YAML 一直没有被淘汰：从 Clash 配置说开去",
+      "description": "深入探讨 YAML 在 Clash 配置、DevOps 等领域长期存在的原因，包含语法技巧、与 JSON/TOML 的对比以及实际应用中的常见问题。",
+      "author": { "@type": "Organization", "name": "Clash Verge Rev 社区" },
+      "datePublished": "2026-08-3",
+      "dateModified": "2026-08-3",
+      "mainEntityOfPage": { "@type": "WebPage", "@id": "https://classhvverge.org/articles/yaml-why-not-dead.html" }
+    }
+    </script>
+    <style>
+        :root {
+            --brand-dark: #0f172a;
+            --brand-blue: #3b82f6;
+            --brand-blue-hover: #2563eb;
+            --text-main: #334155;
+            --text-title: #1e293b;
+            --bg-light: #ffffff;
+            --bg-accent: #f8fafc;
+            --border-line: #cbd5e1;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+            --shadow-md: 0 8px 24px rgba(0,0,0,0.1);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            color: var(--text-main);
+            line-height: 1.75;
+            background-color: var(--bg-light);
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem 6%;
+            background: var(--brand-dark);
+            color: #ffffff;
+            position: sticky;
+            top: 0;
+            z-index: 2000;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #ffffff;
+            text-decoration: none;
+            flex-shrink: 0;
+        }
+        .logo img { width: auto; height: 38px; margin-right: 12px; display: block; }
+        .nav-box { display: flex; align-items: center; flex-wrap: wrap; gap: 0.75rem; }
+        nav { display: flex; align-items: center; flex-wrap: wrap; gap: 0.35rem; }
+        nav a {
+            margin-left: 0.5rem;
+            text-decoration: none;
+            color: #cbd5e1;
+            font-size: 0.93rem;
+            transition: color 0.2s;
+            white-space: nowrap;
+            padding: 0.25rem 0.35rem;
+            border-radius: 4px;
+        }
+        nav a:hover { color: var(--brand-blue); background-color: rgba(255,255,255,0.05); }
+        nav a.nav-active { color: var(--brand-blue); font-weight: 600; background-color: rgba(59,130,246,0.1); }
+        .github-btn {
+            display: inline-flex;
+            align-items: center;
+            background-color: var(--brand-blue);
+            color: #ffffff;
+            padding: 0.55rem 1.1rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            text-decoration: none;
+            margin-left: 1.5rem;
+            transition: background-color 0.2s;
+            font-weight: 500;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .github-btn:hover { background-color: var(--brand-blue-hover); }
+        .github-btn svg { width: 16px; height: 16px; margin-right: 6px; fill: currentColor; }
+
+        .article-wrapper { max-width: 860px; margin: 0 auto; padding: 3rem 6%; }
+        .article-header { text-align: center; padding: 3rem 0 2rem; }
+        .article-header h1 { font-size: 2.5rem; color: var(--brand-dark); margin-bottom: 1rem; line-height: 1.3; }
+        .article-meta {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            color: #64748b;
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+        .article-meta span { display: flex; align-items: center; gap: 0.3rem; }
+        .featured-image {
+            width: 100%; height: 300px;
+            background: #f1f5f9;
+            border: 2px dashed #94a3b8;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+            font-size: 0.95rem;
+            margin-bottom: 2.5rem;
+        }
+        .article-content h2 {
+            font-size: 1.9rem;
+            color: var(--brand-dark);
+            margin: 2.5rem 0 1rem;
+            border-left: 5px solid var(--brand-blue);
+            padding-left: 1rem;
+        }
+        .article-content h3 {
+            font-size: 1.5rem;
+            color: var(--text-title);
+            margin: 2rem 0 0.8rem;
+        }
+        .article-content p { margin-bottom: 1.2rem; font-size: 1.05rem; color: #334155; }
+        .code-block {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 1.5rem;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            margin: 1.5rem 0;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        .code-block .key { color: #93c5fd; }
+        .code-block .value { color: #fbbf24; }
+        .code-block .comment { color: #94a3b8; }
+        .tip-box {
+            background: #f0f9ff;
+            border-left: 5px solid var(--brand-blue);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+        }
+        .tip-box strong { color: #0f172a; }
+        .info-box {
+            background: #fff7ed;
+            border-left: 5px solid #f97316;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+        }
+        .info-box strong { color: #7c2d12; }
+        .compare-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            border: 1px solid var(--border-line);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .compare-table th {
+            background: #f1f5f9;
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--brand-dark);
+        }
+        .compare-table td {
+            padding: 0.8rem 1rem;
+            border-top: 1px solid #e2e8f0;
+        }
+        .compare-table tr:hover { background: #f8fafc; }
+        .related-links {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+        .related-link-card {
+            background: #fff;
+            border: 1px solid var(--border-line);
+            border-radius: 10px;
+            padding: 1.2rem;
+            text-decoration: none;
+            color: var(--text-main);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .related-link-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+        .related-link-card h4 { font-size: 1.1rem; color: var(--brand-dark); margin-bottom: 0.3rem; }
+        .related-link-card p { font-size: 0.85rem; color: #64748b; }
+        .table-of-contents {
+            background: #f8fafc;
+            border: 1px solid var(--border-line);
+            border-radius: 10px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 2rem;
+        }
+        .table-of-contents h3 { margin-bottom: 0.8rem; font-size: 1.2rem; color: var(--brand-dark); }
+        .table-of-contents ul { list-style: none; columns: 2; column-gap: 2rem; }
+        .table-of-contents li { margin-bottom: 0.4rem; }
+        .table-of-contents a { color: var(--brand-blue); text-decoration: none; font-weight: 500; }
+        .table-of-contents a:hover { text-decoration: underline; }
+        footer {
+            background: #020617;
+            color: #94a3b8;
+            padding: 4rem 6%;
+            text-align: center;
+            font-size: 0.9rem;
+            border-top: 1px solid #1e293b;
+            margin-top: 3rem;
+        }
+        @media (max-width: 768px) {
+            header { flex-direction: column; gap: 1rem; padding: 1.25rem 5%; }
+            .nav-box { flex-direction: column; gap: 1rem; width: 100%; align-items: center; }
+            nav { justify-content: center; flex-wrap: wrap; gap: 0.4rem; }
+            nav a { margin: 0 0.3rem; font-size: 0.88rem; }
+            .github-btn { margin-left: 0; }
+            .article-header h1 { font-size: 1.9rem; }
+            .table-of-contents ul { columns: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="../index.html" class="logo">
+            <img src="../logo.webp" alt="Clash verge rev 官网" width="160" height="38">
+            <span>Clash Verge 官网</span>
+        </a>
+        <div class="nav-box">
+            <nav>
+                <a href="../download.html">客户端下载</a>
+                <a href="../install.html">安装教程</a>
+                <a href="../configuration.html">配置教程</a>
+                <a href="../faq.html">常见问题</a>
+                <a href="../changelog.html">更新日志</a>
+                <a href="index.html" class="nav-active">文章中心</a>
+                <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/wiki">📚 文档</a>
+            </nav>
+            <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/" class="github-btn" target="_blank" rel="noopener noreferrer">
+                <svg viewBox="0 0 16 16" version="1.1" aria-hidden="true"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+                GitHub 仓库
+            </a>
+        </div>
+    </header>
+
+    <main class="article-wrapper">
+        <article>
+            <div class="article-header">
+                <h1>为什么 YAML 一直没有被淘汰：从 Clash 配置说开去</h1>
+                <div class="article-meta">
+                    <span>📅 2026-08-3</span>
+                    <span>🏷️ 技术杂谈</span>
+                    <span>⏱️ 阅读约 15 分钟</span>
+                </div>
+            </div>
+
+            <div class="featured-image">
+                [ YAML 缩进报错 vs 正确配置的对比截图 ]
+            </div>
+
+            <div class="table-of-contents">
+                <h3>📑 本文目录</h3>
+                <ul>
+                    <li><a href="#hate">1. 每一个被 YAML 折磨过的人都想骂它</a></li>
+                    <li><a href="#origin">2. YAML 不是一夜之间冒出来的</a></li>
+                    <li><a href="#why-not-json">3. 为什么没直接用 JSON？</a></li>
+                    <li><a href="#in-clash">4. 在 Clash 配置里，YAML 其实帮了大忙</a></li>
+                    <li><a href="#tricks">5. 多行字符串、锚点和别名的进阶玩法</a></li>
+                    <li><a href="#traps">6. 那些年我们踩过的 YAML 坑</a></li>
+                    <li><a href="#future">7. YAML 会一直存在下去吗</a></li>
+                </ul>
+            </div>
+
+            <div class="article-content">
+                <h2 id="hate">😤 每一个被 YAML 折磨过的人都想骂它</h2>
+                <p>说实话，YAML 挨的骂可能比任何一种配置文件格式都多。缩进错了，整个应用崩掉；多了个空格，解析器直接报错不给任何面子。我猜每个第一次写 Clash 配置的人都至少被“YAML 格式错误”折磨过一次。我刚学代理那会儿，从网上复制了一段规则贴到配置文件里，运行日志直接爆红，查了半天发现是某一行前面多了一个 tab 而不是两个空格——肉眼根本看不出来。那种想砸键盘的冲动，我相信你也有过。</p>
+                <p>但神奇的是，这么多年过去了，JSON、TOML、HCL 一茬一茬地冒出来，YAML 不仅没死，反而牢牢占据着 DevOps、CI/CD、容器编排等关键领域，当然也包括我们每天都在用的 Clash Verge Rev 配置文件。它的生命力到底来自哪里？这篇文章我就想掰扯掰扯这个话题——以一个被 YAML 虐过无数次的普通用户的视角。</p>
+
+                <h2 id="origin">📜 YAML 不是一夜之间冒出来的</h2>
+                <p>YAML 全称“YAML Ain't Markup Language”，创始人 Clark Evans 在 2001 年提出这个想法的时候，目标是创建一个“人类可读性优先”的数据序列化格式。它最初的灵感来自 XML 的复杂冗长，以及 JSON 的前身——JavaScript 对象字面量。YAML 用缩进代替了 XML 的尖括号，用 <code>:</code> 和 <code>-</code> 代替了 JSON 的 <code>{}</code> 和 <code>[]</code>。最早的应用场景其实是 Ruby 社区的配置管理和数据传输，后来逐渐被 Python、Ansible 等大规模采用。</p>
+                <p>YAML 设计上有个很特殊的追求：它支持复杂的引用（锚点和别名）、多行字符串（字面量和折叠两种模式）、类型标签，以及至今仍有争议的“Norway problem”（布尔值识别）。这些特性有的让 YAML 变得无比强大，有的成了它的黑历史。不过，对一个代理客户端来说，绝大多数时间我们只用到它最基础的字典和列表功能，而这些恰恰是 YAML 做得最自然的部分。</p>
+
+                <h2 id="why-not-json">🤷 为什么没直接用 JSON？</h2>
+                <p>可能有人会问，Clash 配置本质上就是一堆节点、规则和策略组，完全可以用 JSON 表达啊，而且 JSON 没有缩进问题，解析器也更通用。这话没错，但你要是看过一个包含几百条规则的 JSON 文件，就不会这么想了。</p>
+                <p>JSON 的几个致命伤让它不适合做“人经常手动编辑”的配置：</p>
+                <ul style="margin-bottom: 1.5rem; padding-left: 1.5rem;">
+                    <li><strong>不支持注释</strong>。这是最大的硬伤。我可以在 YAML 里写一堆 <code># 以下规则用于 ChatGPT</code> 之类的说明，下次打开还能看懂当初为什么这么配。JSON 里你只能靠命名去猜，或者写个 <code>"__comment__": "解释"</code> 这种自欺欺人的字段。</li>
+                    <li><strong>括号和逗号太啰嗦</strong>。每一个对象都要 <code>{}</code>，每一个数组都要 <code>[]</code>，最后一项还不能加逗号。手工维护的时候，每次新增或删除一项，都要小心翼翼地检查逗号。YAML 的 <code>- </code> 列表语法天然避免了这个问题。</li>
+                    <li><strong>多行字符串表达困难</strong>。JSON 只能 <code>"第一行\n第二行"</code>，整段复制粘贴时简直痛苦。YAML 的 <code>|</code> 和 <code>></code> 可以让多行内容保持原样或自动折叠，这对于写配置文件中的 <code>ws-path</code> 或者 <code>payload</code> 之类字段尤其方便。</li>
+                    <li><strong>视觉噪音多</strong>。人眼天生更适合看缩进和换行来表达层级关系，而不是数括号。不信你把 Clash 的完整配置转换成 JSON 看一眼，绝对头晕。</li>
+                </ul>
+                <p>TOML 其实是个不错的折中方案，但它的生态远不如 YAML 广泛，而且 Clash 生态从一开始就选定了 YAML，历史惯性已经形成。如果你对配置文件的详细写法还不熟悉，可以先翻翻 <a href="../configuration.html" target="_blank">配置教程</a>，里面详细解释了 YAML 里各个字段的写法。</p>
+                <div class="tip-box">
+                    <strong>💡 小提醒：</strong> 你可以用 <code>yamllint</code> 或在线工具来检查配置文件是否有格式问题，省得启动客户端时看到一长串报错。
+                </div>
+
+                <h2 id="in-clash">🎯 在 Clash 配置里，YAML 其实帮了大忙</h2>
+                <p>具体到 Clash Verge Rev 的日常使用，YAML 的优势会体现得更明显。首先是 <strong>规则的可读性</strong>。一个典型的规则段是这样的：</p>
+                <div class="code-block">
+<span class="comment"># 广告拦截</span>
+<span class="value">DOMAIN-SUFFIX,doubleclick.net,REJECT</span>
+<span class="comment"># ChatGPT 专用</span>
+<span class="value">DOMAIN-SUFFIX,openai.com,🚀 ChatGPT</span>
+<span class="comment"># 国内直连</span>
+<span class="value">GEOIP,CN,DIRECT</span>
+                </div>
+                <p>这种“规则类型、匹配目标、动作”的格式用 YAML 的列表写出来非常直观。如果用 JSON，就是 <code>["DOMAIN-SUFFIX,doubleclick.net,REJECT", "DOMAIN-SUFFIX,openai.com,🚀 ChatGPT"]</code>，可读性大打折扣。而且，YAML 允许你用 <code>RULE-SET</code> 配合 <a href="rule-provider-guide.html" target="_blank">Rule Provider</a> 把数千条规则放到远程文件里，主配置文件只保留几行引用，这极大地降低了手动维护的复杂度。</p>
+                <p>其次是 <strong>策略组和节点列表</strong>。在 YAML 里，你可以清晰地看到每个策略组的类型、包含的节点、健康检查的 URL。特别是当你需要在节点之间切换时，这个结构就像一张表格，一目了然。</p>
+                <p>最后是 <strong>注释带来的协作能力</strong>。如果你跟朋友共享配置，或者在 GitHub 上分享自己的配置，注释可以解释每一个规则块的意图。这种能力在 <a href="../import-subscription.html" target="_blank">导入订阅</a> 的场景下也很重要——当你从机场拿到一份默认配置，想加上自己的自定义规则，可以直接在原文件上注释标注。</p>
+
+                <h2 id="tricks">🧩 多行字符串、锚点和别名的进阶玩法</h2>
+                <p>YAML 里有些高级功能，虽然不常用，但用好了能极大提升配置维护效率。比如 <strong>多行字符串</strong>。有些节点需要配置 TLS 的证书内容或者自定义的 Payload，如果用 JSON 那种一行写法根本没法看。YAML 提供了两种模式：</p>
+                <div class="code-block">
+<span class="comment"># 字面量模式（保留换行）</span>
+<span class="key">ws-headers:</span>
+  <span class="key">Host:</span> <span class="value">|</span>
+    <span class="value">example.com</span>
+    <span class="value">another-header: value</span>
+
+<span class="comment"># 折叠模式（换行转空格）</span>
+<span class="key">description:</span> <span class="value">></span>
+    <span class="value">这是一段很长的描述文字，</span>
+    <span class="value">它会自动把换行替换成空格，</span>
+    <span class="value">适合写说明。</span>
+                </div>
+                <p>另一个是 <strong>锚点和别名</strong>，它可以在一个配置里定义重复内容的引用。比如你有多个节点只是服务器地址和密码不同，但加密方式和混淆设置完全一样，就可以这样写：</p>
+                <div class="code-block">
+<span class="key">default-settings:</span> &<span class="value">base</span>
+  <span class="key">type:</span> <span class="value">ss</span>
+  <span class="key">cipher:</span> <span class="value">aes-256-gcm</span>
+  <span class="key">plugin:</span> <span class="value">obfs</span>
+  <span class="key">plugin-opts:</span>
+    <span class="key">mode:</span> <span class="value">tls</span>
+
+<span class="key">proxies:</span>
+  - <span class="key">name:</span> <span class="value">"节点A"</span>
+    <span class="value"><<: *base</span>
+    <span class="key">server:</span> <span class="value">server-a.com</span>
+    <span class="key">password:</span> <span class="value">pass-a</span>
+  - <span class="key">name:</span> <span class="value">"节点B"</span>
+    <span class="value"><<: *base</span>
+    <span class="key">server:</span> <span class="value">server-b.com</span>
+    <span class="key">password:</span> <span class="value">pass-b</span>
+                </div>
+                <p>这在管理大量节点时特别实用，减少了重复输入，也避免了因为手误改错参数。虽然 Clash 的内核 Mihomo 并不完全支持 YAML 的所有高级特性（比如合并键可能会被忽略），但类似技巧在本地配置维护时仍然可以帮到你。</p>
+                <div class="info-box">
+                    <strong>⚠️ 注意：</strong> 不是所有 YAML 解析器都支持复杂的锚点和标签，Clash 的配置引擎通常只支持最基础的字典和列表。使用高级特性前最好先验证。
+                </div>
+
+                <h2 id="traps">🕳️ 那些年我们踩过的 YAML 坑</h2>
+                <p>YAML 的坑可谓千奇百怪，下面这些是我亲身遇到以及从社区 <a href="../faq.html" target="_blank">常见问题</a> 里整理出来的：</p>
+                <ul style="margin-bottom: 1.5rem; padding-left: 1.5rem;">
+                    <li><strong>Tab vs 空格</strong>。YAML 只认空格，不认 Tab。有些编辑器默认会插入 Tab，导致文件看起来对齐，实际解析失败。VS Code 里可以开启“显示空白字符”，把 Tab 替换成两个空格。</li>
+                    <li><strong>布尔值陷阱</strong>。YAML 会自动把 <code>yes</code>、<code>no</code>、<code>on</code>、<code>off</code> 等解析为布尔值，而不是字符串。如果你的节点名称叫 <code>no</code>，可能会被解析成 <code>false</code>，让你完全摸不着头脑。解决办法是加引号，比如 <code>"no"</code>。</li>
+                    <li><strong>多行字符串的缩进</strong>。使用 <code>|</code> 或 <code>></code> 时，后面的内容需要有一个缩进层级，而且要保证每一行缩进一致。有时候从一个地方复制过来的文本看起来对齐了，实际混入了不可见字符，就会报错。</li>
+                    <li><strong>冒号后面必须跟空格</strong>。写 <code>key:value</code> 会被当成字符串，而正确的写法是 <code>key: value</code>。这个错误在复制域名端口信息时容易出现。</li>
+                </ul>
+                <p>这些坑让很多人对 YAML 深恶痛绝，但熟悉之后，你会形成一种肌肉记忆。比如我现在写配置，已经习惯性地先敲一个冒号再加一个空格，而且每写几行就保存并用客户端检查一下。</p>
+
+                <h2 id="future">🔮 YAML 会一直存在下去吗</h2>
+                <p>很多人预测 YAML 会被 TOML、HCL 或者某种新的格式取代，但现实是，YAML 在配置管理和基础设施即代码领域的地位已经根深蒂固。Kubernetes 的清单文件、Ansible 的 Playbook、Docker Compose 的编排文件，全部用 YAML。这些工具形成了强大的网络效应，只要它们还在，YAML 就死不了。</p>
+                <p>对于 Clash Verge Rev 来说，YAML 也是短期内不可能更换的基础组件。Mihomo 内核对 YAML 的支持已经非常成熟，而且社区沉淀了大量的教程和模板。即使有一天出现更好的格式，兼容现有配置的成本也太高了。所以，与其盼着它退休，不如学着跟它和平共处。如果你想进一步了解 YAML 在代理工具中的具体应用，可以参考 <a href="../rule.html" target="_blank">Rule 模式详解</a>、<a href="../dns.html" target="_blank">DNS 配置</a> 以及 <a href="rule-provider-guide.html" target="_blank">Rule Provider 实战</a>，这些文章里都有大量 YAML 示例供你参考。</p>
+            </div>
+
+            <h3 style="font-size: 1.5rem; margin: 2.5rem 0 1rem;">📖 继续阅读</h3>
+            <div class="related-links">
+                <a href="../configuration.html" class="related-link-card">
+                    <h4>📘 配置教程</h4>
+                    <p>YAML 字段完全解析</p>
+                </a>
+                <a href="../rule.html" class="related-link-card">
+                    <h4>📋 Rule 模式</h4>
+                    <p>规则语法与实战</p>
+                </a>
+                <a href="rule-provider-guide.html" class="related-link-card">
+                    <h4>📦 Rule Provider</h4>
+                    <p>远程规则集管理</p>
+                </a>
+                <a href="../dns.html" class="related-link-card">
+                    <h4>🌐 DNS 配置</h4>
+                    <p>DNS 相关 YAML 字段</p>
+                </a>
+                <a href="why-tauri.html" class="related-link-card">
+                    <h4>🦀 Tauri 选型</h4>
+                    <p>框架背后的故事</p>
+                </a>
+                <a href="../faq.html" class="related-link-card">
+                    <h4>❓ 常见问题</h4>
+                    <p>配置报错怎么办</p>
+                </a>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="main-wrapper">
+            <p>&copy; 2026 Clash Verge Rev 官网下载中心. 所有技术内容基于社区公开文档，仅供学习与测试。请遵守当地法律法规。</p>
+        </div>
+    </footer>
+
+</body>
+</html>
