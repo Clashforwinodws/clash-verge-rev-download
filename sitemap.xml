@@ -207,4 +207,18 @@
         <changefreq>weekly</changefreq>
         <priority>0.6</priority>
     </url>
+
+ <url>
+        <loc>https://classhvverge.org/articles/proxy-clients-august-2026.html</loc>
+        <lastmod>2026-08-10</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.6</priority>
+    </url>
+
+     <url>
+        <loc>https://classhvverge.org/articles/subscription-update.html</loc>
+        <lastmod>2026-08-10</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.6</priority>
+    </url>
 </urlset>
