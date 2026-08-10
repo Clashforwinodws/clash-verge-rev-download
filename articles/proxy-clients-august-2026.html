@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2026年8月代理客户端观察：Verge、Stash、Hiddify 与社区的那些事</title>
+    <meta name="description" content="八月忙完几个项目后，我抽空看了看最近代理客户端的动向。Clash Verge Rev 更新节奏、Stash 在 Apple 平台的小动作、Hiddify 的快速迭代，还有 Mihomo 内核催生的新分支——这篇观察笔记不含任何推广，只有我这几个月实际使用下来的碎碎念和真实体验。">
+    <meta name="keywords" content="代理客户端, Clash Verge Rev, Stash, Hiddify, Flower, Mihomo, 代理客户端对比, 2026年8月, 客户端观察">
+    <link rel="icon" type="image/x-icon" href="../favicon.ico">
+    <link rel="shortcut icon" type="image/x-icon" href="../favicon.ico">
+    <link rel="canonical" href="https://classhvverge.org/articles/proxy-clients-august-2026.html">
+    <link rel="stylesheet" href="../index2.css">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "2026年8月代理客户端观察：Verge、Stash、Hiddify 与社区的那些事",
+      "description": "对2026年8月当前主流代理客户端的一次非正式观察，涵盖 Clash Verge Rev、Stash、Hiddify、Flower 等的最新动态与使用体验。",
+      "author": { "@type": "Organization", "name": "Clash Verge Rev 社区" },
+      "datePublished": "2026-08-10",
+      "dateModified": "2026-08-10",
+      "mainEntityOfPage": { "@type": "WebPage", "@id": "https://classhvverge.org/articles/proxy-clients-august-2026.html" }
+    }
+    </script>
+    <style>
+        :root {
+            --brand-dark: #0f172a;
+            --brand-blue: #3b82f6;
+            --brand-blue-hover: #2563eb;
+            --text-main: #334155;
+            --text-title: #1e293b;
+            --bg-light: #ffffff;
+            --bg-accent: #f8fafc;
+            --border-line: #cbd5e1;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+            --shadow-md: 0 8px 24px rgba(0,0,0,0.1);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            color: var(--text-main);
+            line-height: 1.75;
+            background-color: var(--bg-light);
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem 6%;
+            background: var(--brand-dark);
+            color: #ffffff;
+            position: sticky;
+            top: 0;
+            z-index: 2000;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #ffffff;
+            text-decoration: none;
+            flex-shrink: 0;
+        }
+        .logo img { width: auto; height: 38px; margin-right: 12px; display: block; }
+        .nav-box { display: flex; align-items: center; flex-wrap: wrap; gap: 0.75rem; }
+        nav { display: flex; align-items: center; flex-wrap: wrap; gap: 0.35rem; }
+        nav a {
+            margin-left: 0.5rem;
+            text-decoration: none;
+            color: #cbd5e1;
+            font-size: 0.93rem;
+            transition: color 0.2s;
+            white-space: nowrap;
+            padding: 0.25rem 0.35rem;
+            border-radius: 4px;
+        }
+        nav a:hover { color: var(--brand-blue); background-color: rgba(255,255,255,0.05); }
+        nav a.nav-active { color: var(--brand-blue); font-weight: 600; background-color: rgba(59,130,246,0.1); }
+        .github-btn {
+            display: inline-flex;
+            align-items: center;
+            background-color: var(--brand-blue);
+            color: #ffffff;
+            padding: 0.55rem 1.1rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            text-decoration: none;
+            margin-left: 1.5rem;
+            transition: background-color 0.2s;
+            font-weight: 500;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .github-btn:hover { background-color: var(--brand-blue-hover); }
+        .github-btn svg { width: 16px; height: 16px; margin-right: 6px; fill: currentColor; }
+
+        .article-wrapper { max-width: 860px; margin: 0 auto; padding: 3rem 6%; }
+        .article-header { text-align: center; padding: 3rem 0 2rem; }
+        .article-header h1 { font-size: 2.5rem; color: var(--brand-dark); margin-bottom: 1rem; line-height: 1.3; }
+        .article-meta {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            color: #64748b;
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+        .article-meta span { display: flex; align-items: center; gap: 0.3rem; }
+        .featured-image {
+            width: 100%; height: 300px;
+            background: #f1f5f9;
+            border: 2px dashed #94a3b8;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+            font-size: 0.95rem;
+            margin-bottom: 2.5rem;
+        }
+        .article-content h2 {
+            font-size: 1.9rem;
+            color: var(--brand-dark);
+            margin: 2.5rem 0 1rem;
+            border-left: 5px solid var(--brand-blue);
+            padding-left: 1rem;
+        }
+        .article-content h3 {
+            font-size: 1.5rem;
+            color: var(--text-title);
+            margin: 2rem 0 0.8rem;
+        }
+        .article-content p { margin-bottom: 1.2rem; font-size: 1.05rem; color: #334155; }
+        .code-block {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 1.5rem;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            margin: 1.5rem 0;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        .code-block .key { color: #93c5fd; }
+        .code-block .value { color: #fbbf24; }
+        .code-block .comment { color: #94a3b8; }
+        .tip-box {
+            background: #f0f9ff;
+            border-left: 5px solid var(--brand-blue);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+        }
+        .tip-box strong { color: #0f172a; }
+        .info-box {
+            background: #fff7ed;
+            border-left: 5px solid #f97316;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+        }
+        .info-box strong { color: #7c2d12; }
+        .compare-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            border: 1px solid var(--border-line);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .compare-table th {
+            background: #f1f5f9;
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--brand-dark);
+        }
+        .compare-table td {
+            padding: 0.8rem 1rem;
+            border-top: 1px solid #e2e8f0;
+        }
+        .compare-table tr:hover { background: #f8fafc; }
+        .related-links {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+        .related-link-card {
+            background: #fff;
+            border: 1px solid var(--border-line);
+            border-radius: 10px;
+            padding: 1.2rem;
+            text-decoration: none;
+            color: var(--text-main);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .related-link-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+        .related-link-card h4 { font-size: 1.1rem; color: var(--brand-dark); margin-bottom: 0.3rem; }
+        .related-link-card p { font-size: 0.85rem; color: #64748b; }
+        .table-of-contents {
+            background: #f8fafc;
+            border: 1px solid var(--border-line);
+            border-radius: 10px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 2rem;
+        }
+        .table-of-contents h3 { margin-bottom: 0.8rem; font-size: 1.2rem; color: var(--brand-dark); }
+        .table-of-contents ul { list-style: none; columns: 2; column-gap: 2rem; }
+        .table-of-contents li { margin-bottom: 0.4rem; }
+        .table-of-contents a { color: var(--brand-blue); text-decoration: none; font-weight: 500; }
+        .table-of-contents a:hover { text-decoration: underline; }
+        footer {
+            background: #020617;
+            color: #94a3b8;
+            padding: 4rem 6%;
+            text-align: center;
+            font-size: 0.9rem;
+            border-top: 1px solid #1e293b;
+            margin-top: 3rem;
+        }
+        @media (max-width: 768px) {
+            header { flex-direction: column; gap: 1rem; padding: 1.25rem 5%; }
+            .nav-box { flex-direction: column; gap: 1rem; width: 100%; align-items: center; }
+            nav { justify-content: center; flex-wrap: wrap; gap: 0.4rem; }
+            nav a { margin: 0 0.3rem; font-size: 0.88rem; }
+            .github-btn { margin-left: 0; }
+            .article-header h1 { font-size: 1.9rem; }
+            .table-of-contents ul { columns: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="../index.html" class="logo">
+            <img src="../logo.webp" alt="Clash verge rev 官网" width="160" height="38">
+            <span>Clash Verge 官网</span>
+        </a>
+        <div class="nav-box">
+            <nav>
+                <a href="../download.html">客户端下载</a>
+                <a href="../install.html">安装教程</a>
+                <a href="../configuration.html">配置教程</a>
+                <a href="../faq.html">常见问题</a>
+                <a href="../changelog.html">更新日志</a>
+                <a href="index.html" class="nav-active">文章中心</a>
+                <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/wiki">📚 文档</a>
+            </nav>
+            <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/" class="github-btn" target="_blank" rel="noopener noreferrer">
+                <svg viewBox="0 0 16 16" version="1.1" aria-hidden="true"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+                GitHub 仓库
+            </a>
+        </div>
+    </header>
+
+    <main class="article-wrapper">
+        <article>
+            <div class="article-header">
+                <h1>2026年8月代理客户端观察：慢下来的生态与藏在细节里的改变</h1>
+                <div class="article-meta">
+                    <span>📅 2026-08-10</span>
+                    <span>🏷️ 行业观察</span>
+                    <span>⏱️ 阅读约 16 分钟</span>
+                </div>
+            </div>
+
+            <div class="featured-image">
+                [ 2026年8月代理客户端生态概览图 ]
+            </div>
+
+            <div class="table-of-contents">
+                <h3>📑 本文目录</h3>
+                <ul>
+                    <li><a href="#overview">1. 先说说整体印象</a></li>
+                    <li><a href="#clash-verge">2. Clash Verge Rev：稳中求进，细节不断打磨</a></li>
+                    <li><a href="#stash">3. Stash：苹果生态里的隐形冠军</a></li>
+                    <li><a href="#hiddify">4. Hiddify：伊朗团队的开源力量，用面板整合一切</a></li>
+                    <li><a href="#flower">5. Flower 与新秀：Mihomo 内核下的百花齐放</a></li>
+                    <li><a href="#protocols">6. 协议层面：Hysteria2 普及，Shadowsocks 2022 增量</a></li>
+                    <li><a href="#mobile">7. 移动端：iOS 依然需要自签，Android 选项变多</a></li>
+                    <li><a href="#community">8. 社区与生态：GitHub 的活跃度是一面镜子</a></li>
+                    <li><a href="#my-take">9. 我自己的选择与推荐</a></li>
+                </ul>
+            </div>
+
+            <div class="article-content">
+                <h2 id="overview">🗓️ 先说说整体印象</h2>
+                <p>每年八月我都有个习惯：坐下来翻一遍自己常用的代理客户端，看看它们这半年来变成了什么样子。今年尤其有趣，因为 Clash for Windows 彻底成为历史，Clash Verge Rev 接过了桌面端的大旗，而移动端、Linux 端也冒出了不少新东西。整个生态不再像前几年那样疯狂涌现新工具，而是进入了一种“沉淀期”——大家不再比拼谁支持的协议多，更多是在打磨稳定性、界面体验和跨平台一致性。</p>
+                <p>这其实是好事。代理客户端说到底是个工具，不是玩具。用户想要的不过是开机自启、规则生效、不漏 DNS、不断流。谁能在这些基础体验上做得更好，谁就能留住用户。下面我会逐个聊几个目前有代表性的客户端，内容完全基于我自己的实际使用和这段时间的观察，没有任何商业关系。如果你想了解这些客户端背后的内核，可以先去翻一翻 <a href="../mihomo.html" target="_blank">Mihomo 内核解析</a>，很多客户端都是基于它的。</p>
+
+                <h2 id="clash-verge">🦀 Clash Verge Rev：稳中求进，细节不断打磨</h2>
+                <p>从 Clash for Windows 迁移到 Clash Verge Rev 的用户越来越多，这在 <a href="migrate-from-cfw.html" target="_blank">迁移指南</a> 发布后的下载量上能看出来。Verge 这个月的更新频率虽然没有年初那么密集，但每一次提交都在解决实际问题：对 WFP 模式的进一步兼容、对多显示器 DPI 的修复、TUN 模式下 UDP 缓存的优化等等。这些改动不像“支持新协议”那么吸引眼球，可对于日常需要稳定网络的人来说，远比一个花哨的新功能重要。</p>
+                <p>有一个我自己注意到的小细节：Verge 的连接面板在 v2.5.3 里增加了按进程名称过滤的功能。以前只能看域名，现在可以直接过滤出 <code>firefox.exe</code> 或 <code>java.exe</code> 的连接，对那些喜欢用规则按进程分流的用户（比如 <a href="../rule.html" target="_blank">Rule 模式</a> 里的 <code>PROCESS-NAME</code>）简直太实用了。这个功能是社区 contributor 提交的 PR，也侧面说明 Verge 的开源协作模式正在良性运转。</p>
+                <p>不过，我在 Linux 上用 Verge 时，偶尔还是会遇到托盘图标不响应的问题，特别是在 KDE 环境里。虽然不影响代理本身，但对强迫症来说总想点两下。官方 Issue 里有讨论，看起来跟 <a href="why-tauri.html" target="_blank">Tauri 框架</a> 的 Linux 托盘实现有关，短期内可能不会完全解决。好在命令行启动和日志一切正常，当网关跑的时候基本不用管界面。如果你也需要在 Linux 上部署，可以看 <a href="install-linux.html" target="_blank">Linux 安装指南</a> 和 <a href="ubuntu-clash-verge-setup.html" target="_blank">Ubuntu 部署教程</a>。</p>
+
+                <h2 id="stash">🍎 Stash：苹果生态里的隐形冠军</h2>
+                <p>Stash 在 iOS 和 macOS 上的体验依然独一档。上个月更新的版本支持了 iOS 18 的自动化捷径深度集成，你可以根据地理位置、时间、Wi-Fi 名称自动切换代理模式。比如我设定的是“离开家自动开启 TUN，连上家里的 Wi-Fi 自动关闭”，用了两个月，几乎没出过错。这种自动化是 Android 和桌面端目前很难匹敌的。</p>
+                <p>但 Stash 的收费策略最近在社区里有些讨论。iOS 版付费没问题，但 macOS 版需要单独再买一次，让一些同时用 iPhone 和 Mac 的用户觉得成本偏高。而且它是闭源的，虽然核心基于 <a href="../mihomo.html" target="_blank">Mihomo</a>，但上层代码无法审查。如果你特别在意软件自由，可能会更倾向于在 Mac 上用 Clash Verge Rev。我自己的做法是移动端用 Stash，桌面端用 Verge，配置文件通过 <a href="multi-device-sync.html" target="_blank">Git 同步</a>，两者互补。如果你还没决定，可以看看之前写的 <a href="stash-vs-clashverge.html" target="_blank">Stash 与 Verge 对比</a>。</p>
+
+                <h2 id="hiddify">🌐 Hiddify：伊朗团队的开源力量，用面板整合一切</h2>
+                <p>Hiddify 这个名字在国内可能不如 Clash 响亮，但它在国际社区的影响力正在迅速扩大。它是一个“面板+客户端”的整体方案：服务端可以一键部署 Xray、Hysteria2、TUIC 等协议，客户端则覆盖了 Android、iOS、Windows、macOS、Linux。这种全家桶模式有点像当年的 V2Ray + V2RayX，但做得更现代。</p>
+                <p>Hiddify 客户端同样基于 Mihomo 内核（它们叫“Clash Meta”），但上层 UI 是用 Flutter 写的，界面风格非常统一。我试过它的 Windows 版，感觉交互逻辑跟 Verge 不太一样：它更强调“Profile”的概念，一个 Profile 对应一个完整的代理订阅+规则+DNS 配置，切换 Profile 就等于切换一整套网络环境。对于需要同时管理多个工作场景（比如公司、家庭、出差）的用户来说，这个设计比 Verge 的单一配置列表更直观。但在自定义规则的灵活性上，Verge 还是更胜一筹，因为 Hiddify 目前对 Rule Provider 的支持比较初步。</p>
+                <p>从 GitHub 的 star 数来看，Hiddify 的增长曲线很陡峭，社区贡献者以伊朗和俄罗斯开发者为主。考虑到这两个地区的网络环境，他们对于抗封锁协议和混淆技术的研究非常深入，这也是为什么 Hiddify 在 Reality 协议和 IPv6 隧道方面做得很超前。如果你喜欢折腾服务端，可以关注一下它。</p>
+
+                <h2 id="flower">🌸 Flower 与新秀：Mihomo 内核下的百花齐放</h2>
+                <p>Flower 是最近几个月才冒出来的一个 macOS 专用客户端，界面设计非常极简，类似于原生的 Mac 应用风格，没有侧边栏，所有操作都在一个窗口内完成。它也是基于 Mihomo 内核，但只支持 macOS，定位明显是冲着喜欢原生体验的 Apple 用户去的。目前功能还比较简单，不支持 TUN 模式（只能系统代理），规则编辑也没有可视化界面，需要手动改配置文件。但它的 UI 确实漂亮，如果后续加入更多功能，可能会吸引一部分 Stash Mac 版的用户。</p>
+                <p>除此之外，还有几个基于 Mihomo 的 Web 面板客户端（比如 Metacubexd、Yacd），它们不是独立应用，而是运行在浏览器里的管理界面，通过 API 控制后端的 Mihomo 内核。这种架构特别适合软路由或 VPS 场景——你在服务器上跑一个 Mihomo 内核，然后通过网页管理配置，不用装任何 GUI。我在家里的软路由上就是这么干的，配合 <a href="../enable-tun.html" target="_blank">TUN 模式</a> 实现全屋透明代理。</p>
+
+                <h2 id="protocols">📡 协议层面：Hysteria2 普及，Shadowsocks 2022 增量</h2>
+                <p>协议这块，Hysteria2 在 2026 年已经成为机场和自建节点的标配之一。它的抗丢包能力和 0-RTT 握手让很多原来用 VMess 的用户转向了它。Clash Verge Rev 从 <a href="v2.5.2-highlights.html" target="_blank">v2.5.2</a> 开始完整支持 Hysteria2，配置也非常简单，就是填一个 <code>hysteria2</code> 类型的节点。</p>
+                <p>另一个值得关注的趋势是 <strong>Shadowsocks 2022</strong> 的普及。这个新版本修复了原来 AEAD 套件的一些安全缺陷，使用更强的加密和抗重放机制。我在 <a href="shadowsocks-protocol.html" target="_blank">Shadowsocks 协议解析</a> 里详细写过它的原理。目前支持 SS 2022 的节点还不多，但主要客户端都已经适配了。如果你在自建节点，可以考虑升级到 2022 版本，安全性有质的提升。</p>
+                <p>另外，<strong>VLESS + Reality</strong> 的组合仍然是最强的伪装方案之一，尤其是在移动端。Stash 和 Hiddify 都支持 Reality，Clash Verge Rev 则需要通过 Mihomo 内核的 <code>vless</code> 类型节点来实现。配置时需要注意 <code>flow: xtls-rprx-vision</code> 和 <code>servername</code> 的正确填写，否则会握手失败。</p>
+
+                <h2 id="mobile">📱 移动端：iOS 依然需要自签，Android 选项变多</h2>
+                <p>iOS 用户的不便依然存在：除了 Stash（付费）和 Shadowrocket（付费），其他开源客户端基本都需要自签或者 TestFlight。对于不想付费的人来说，每隔几天就要重新签一次 IPA 仍然很麻烦。虽然有 AltStore、SideStore 这些工具，但门槛还是高。</p>
+                <p>Android 这边就好多了。除了 Clash Meta for Android（CMFA）这个老牌客户端，还出现了几个基于 Mihomo 的新 App，界面更现代，支持 Material You 动态颜色。最重要的是，它们全部开源免费。如果你在 Android 上用代理，不妨试试这些新选择，有些在耗电控制和后台保活上比 CMFA 做得更好。</p>
+
+                <h2 id="community">👥 社区与生态：GitHub 的活跃度是一面镜子</h2>
+                <p>看一个开源项目的生命力，GitHub 的 Issue 和 PR 活跃度是最直接的指标。Clash Verge Rev 的仓库目前几乎每天都有新的 Issue，大部分是使用问题，但经常能看到社区成员帮忙回复。Mihomo 内核的仓库则更偏技术讨论，比如 QUIC 协议栈的优化、内存分配器的选择等。如果你对底层开发感兴趣，<a href="mihomo-plugin-dev.html" target="_blank">插件开发指南</a> 是一个不错的起点。</p>
+                <p>Stash 因为是闭源，没有公开的 Issue 追踪，只能通过邮件反馈。Hiddify 的社区则更国际化，Issues 里英语、俄语、波斯语混杂，非常有特色。</p>
+                <p>有一个趋势值得注意：越来越多的新手用户直接跳过 CLI 工具，从机场订阅直接跳到图形化客户端。他们不关心 YAML 怎么写，只想点几下按钮就能上网。这对客户端的设计提出了新的要求——如何在不暴露底层复杂性的同时，让用户能掌控核心设置。这也是为什么 <a href="yaml-why-not-dead.html" target="_blank">YAML 为什么还没被淘汰</a> 这个话题会引发那么多讨论，因为图形界面的背后仍然是那一行行配置。</p>
+
+                <h2 id="my-take">✅ 我自己的选择与推荐</h2>
+                <p>八月快过半，总结一下我目前的配置：主力桌面（Windows + Linux）用 Clash Verge Rev，移动端用 Stash，软路由上跑 Mihomo 内核 + Metacubexd Web 面板。Hiddify 我会继续观察，它的面板服务端对于需要自建机场的人来说很有吸引力。Flower 等新秀我会保持关注，但目前它们的功能深度还不足以替代成熟客户端。</p>
+                <p>如果你想从零开始搭建一整套代理环境，我的建议是：先选一个稳定的客户端（桌面推荐 <a href="../download.html" target="_blank">Clash Verge Rev</a>，移动端推荐 Stash），然后花时间把 <a href="../configuration.html" target="_blank">配置</a> 和 <a href="../rule.html" target="_blank">规则</a> 弄明白。工具会变，但网络原理和配置思路是相通的。希望这篇观察能给你一些有用的参考，也欢迎到 <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/wiki" target="_blank" rel="noopener">Wiki</a> 或者 <a href="../faq.html" target="_blank">常见问题</a> 页面交流你的使用心得。</p>
+            </div>
+
+            <h3 style="font-size: 1.5rem; margin: 2.5rem 0 1rem;">📖 继续阅读</h3>
+            <div class="related-links">
+                <a href="../mihomo.html" class="related-link-card">
+                    <h4>🧬 Mihomo 内核解析</h4>
+                    <p>了解共同的内核基础</p>
+                </a>
+                <a href="stash-vs-clashverge.html" class="related-link-card">
+                    <h4>📱💻 Stash 与 Verge 对比</h4>
+                    <p>移动端与桌面端的详细比较</p>
+                </a>
+                <a href="../rule.html" class="related-link-card">
+                    <h4>📋 Rule 模式详解</h4>
+                    <p>规则匹配与分流逻辑</p>
+                </a>
+                <a href="subscription-update.html" class="related-link-card">
+                    <h4>⏰ 订阅更新时间</h4>
+                    <p>interval 设置与坑点</p>
+                </a>
+                <a href="../enable-tun.html" class="related-link-card">
+                    <h4>🔌 TUN 模式</h4>
+                    <p>全局代理接管教程</p>
+                </a>
+                <a href="../faq.html" class="related-link-card">
+                    <h4>❓ 常见问题</h4>
+                    <p>使用与排错技巧</p>
+                </a>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="main-wrapper">
+            <p>&copy; 2026 Clash Verge Rev 官网下载中心. 所有技术内容基于社区公开文档，仅供学习与测试。请遵守当地法律法规。</p>
+        </div>
+    </footer>
+
+</body>
+</html>
