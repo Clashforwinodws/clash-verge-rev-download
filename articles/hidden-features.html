@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clash Verge Rev 冷门功能大起底：七个你可能从没用过的隐藏技能</title>
+    <meta name="description" content="除了节点切换和规则分流，Clash Verge Rev 还藏着一堆能让你事半功倍的冷门功能：配置预处理、进程过滤调试、代理链 relay、路由排除、nameserver-policy 精细控制、外部控制 API……本文带你逐个挖掘，每一个都是我在实际使用中反复验证过的私藏技巧，看完你会重新认识这款客户端。">
+    <meta name="keywords" content="Clash Verge Rev 冷门功能, 配置预处理, 进程过滤, 代理链 relay, 路由排除, DNS 策略, 外部控制 API, 隐藏技巧">
+    <link rel="icon" type="image/x-icon" href="../favicon.ico">
+    <link rel="shortcut icon" type="image/x-icon" href="../favicon.ico">
+    <link rel="canonical" href="https://classhvverge.org/articles/hidden-features.html">
+    <link rel="stylesheet" href="../index2.css">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "TechArticle",
+      "headline": "Clash Verge Rev 冷门功能大起底：七个你可能从没用过的隐藏技能",
+      "description": "深入介绍 Clash Verge Rev 中较少被提及但非常实用的高级功能，包括配置预处理、进程过滤、代理链、路由排除、DNS 策略、外部控制 API 等。",
+      "author": { "@type": "Organization", "name": "Clash Verge Rev 社区" },
+      "datePublished": "2026-08-18",
+      "dateModified": "2026-08-18",
+      "mainEntityOfPage": { "@type": "WebPage", "@id": "https://classhvverge.org/articles/hidden-features.html" }
+    }
+    </script>
+    <style>
+        :root {
+            --brand-dark: #0f172a;
+            --brand-blue: #3b82f6;
+            --brand-blue-hover: #2563eb;
+            --text-main: #334155;
+            --text-title: #1e293b;
+            --bg-light: #ffffff;
+            --bg-accent: #f8fafc;
+            --border-line: #cbd5e1;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+            --shadow-md: 0 8px 24px rgba(0,0,0,0.1);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            color: var(--text-main);
+            line-height: 1.75;
+            background-color: var(--bg-light);
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem 6%;
+            background: var(--brand-dark);
+            color: #ffffff;
+            position: sticky;
+            top: 0;
+            z-index: 2000;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #ffffff;
+            text-decoration: none;
+            flex-shrink: 0;
+        }
+        .logo img { width: auto; height: 38px; margin-right: 12px; display: block; }
+        .nav-box { display: flex; align-items: center; flex-wrap: wrap; gap: 0.75rem; }
+        nav { display: flex; align-items: center; flex-wrap: wrap; gap: 0.35rem; }
+        nav a {
+            margin-left: 0.5rem;
+            text-decoration: none;
+            color: #cbd5e1;
+            font-size: 0.93rem;
+            transition: color 0.2s;
+            white-space: nowrap;
+            padding: 0.25rem 0.35rem;
+            border-radius: 4px;
+        }
+        nav a:hover { color: var(--brand-blue); background-color: rgba(255,255,255,0.05); }
+        nav a.nav-active { color: var(--brand-blue); font-weight: 600; background-color: rgba(59,130,246,0.1); }
+        .github-btn {
+            display: inline-flex;
+            align-items: center;
+            background-color: var(--brand-blue);
+            color: #ffffff;
+            padding: 0.55rem 1.1rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            text-decoration: none;
+            margin-left: 1.5rem;
+            transition: background-color 0.2s;
+            font-weight: 500;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .github-btn:hover { background-color: var(--brand-blue-hover); }
+        .github-btn svg { width: 16px; height: 16px; margin-right: 6px; fill: currentColor; }
+
+        .article-wrapper { max-width: 860px; margin: 0 auto; padding: 3rem 6%; }
+        .article-header { text-align: center; padding: 3rem 0 2rem; }
+        .article-header h1 { font-size: 2.5rem; color: var(--brand-dark); margin-bottom: 1rem; line-height: 1.3; }
+        .article-meta {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            color: #64748b;
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+        .article-meta span { display: flex; align-items: center; gap: 0.3rem; }
+        .featured-image {
+            width: 100%; height: 300px;
+            background: #f1f5f9;
+            border: 2px dashed #94a3b8;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+            font-size: 0.95rem;
+            margin-bottom: 2.5rem;
+        }
+        .article-content h2 {
+            font-size: 1.9rem;
+            color: var(--brand-dark);
+            margin: 2.5rem 0 1rem;
+            border-left: 5px solid var(--brand-blue);
+            padding-left: 1rem;
+        }
+        .article-content h3 {
+            font-size: 1.5rem;
+            color: var(--text-title);
+            margin: 2rem 0 0.8rem;
+        }
+        .article-content p { margin-bottom: 1.2rem; font-size: 1.05rem; color: #334155; }
+        .code-block {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 1.5rem;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            margin: 1.5rem 0;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        .code-block .key { color: #93c5fd; }
+        .code-block .value { color: #fbbf24; }
+        .code-block .comment { color: #94a3b8; }
+        .tip-box {
+            background: #f0f9ff;
+            border-left: 5px solid var(--brand-blue);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+        }
+        .tip-box strong { color: #0f172a; }
+        .info-box {
+            background: #fff7ed;
+            border-left: 5px solid #f97316;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+        }
+        .info-box strong { color: #7c2d12; }
+        .compare-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            border: 1px solid var(--border-line);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .compare-table th {
+            background: #f1f5f9;
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--brand-dark);
+        }
+        .compare-table td {
+            padding: 0.8rem 1rem;
+            border-top: 1px solid #e2e8f0;
+        }
+        .compare-table tr:hover { background: #f8fafc; }
+        .related-links {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+        .related-link-card {
+            background: #fff;
+            border: 1px solid var(--border-line);
+            border-radius: 10px;
+            padding: 1.2rem;
+            text-decoration: none;
+            color: var(--text-main);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .related-link-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+        .related-link-card h4 { font-size: 1.1rem; color: var(--brand-dark); margin-bottom: 0.3rem; }
+        .related-link-card p { font-size: 0.85rem; color: #64748b; }
+        .table-of-contents {
+            background: #f8fafc;
+            border: 1px solid var(--border-line);
+            border-radius: 10px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 2rem;
+        }
+        .table-of-contents h3 { margin-bottom: 0.8rem; font-size: 1.2rem; color: var(--brand-dark); }
+        .table-of-contents ul { list-style: none; columns: 2; column-gap: 2rem; }
+        .table-of-contents li { margin-bottom: 0.4rem; }
+        .table-of-contents a { color: var(--brand-blue); text-decoration: none; font-weight: 500; }
+        .table-of-contents a:hover { text-decoration: underline; }
+        footer {
+            background: #020617;
+            color: #94a3b8;
+            padding: 4rem 6%;
+            text-align: center;
+            font-size: 0.9rem;
+            border-top: 1px solid #1e293b;
+            margin-top: 3rem;
+        }
+        @media (max-width: 768px) {
+            header { flex-direction: column; gap: 1rem; padding: 1.25rem 5%; }
+            .nav-box { flex-direction: column; gap: 1rem; width: 100%; align-items: center; }
+            nav { justify-content: center; flex-wrap: wrap; gap: 0.4rem; }
+            nav a { margin: 0 0.3rem; font-size: 0.88rem; }
+            .github-btn { margin-left: 0; }
+            .article-header h1 { font-size: 1.9rem; }
+            .table-of-contents ul { columns: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="../index.html" class="logo">
+            <img src="../logo.webp" alt="Clash verge rev 官网" width="160" height="38">
+            <span>Clash Verge 官网</span>
+        </a>
+        <div class="nav-box">
+            <nav>
+                <a href="../download.html">客户端下载</a>
+                <a href="../install.html">安装教程</a>
+                <a href="../configuration.html">配置教程</a>
+                <a href="../faq.html">常见问题</a>
+                <a href="../changelog.html">更新日志</a>
+                <a href="index.html" class="nav-active">文章中心</a>
+                <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/wiki">📚 文档</a>
+            </nav>
+            <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/" class="github-btn" target="_blank" rel="noopener noreferrer">
+                <svg viewBox="0 0 16 16" version="1.1" aria-hidden="true"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+                GitHub 仓库
+            </a>
+        </div>
+    </header>
+
+    <main class="article-wrapper">
+        <article>
+            <div class="article-header">
+                <h1>Clash Verge Rev 冷门功能大起底：七个你可能从没用过的隐藏技能</h1>
+                <div class="article-meta">
+                    <span>📅 2026-08-18</span>
+                    <span>🏷️ 高级技巧</span>
+                    <span>⏱️ 阅读约 18 分钟</span>
+                </div>
+            </div>
+
+            <div class="featured-image">
+                [ 七个冷门功能的拼贴示意图 ]
+            </div>
+
+            <div class="table-of-contents">
+                <h3>📑 本文目录</h3>
+                <ul>
+                    <li><a href="#config-preprocess">1. 配置预处理：订阅后的二次加工</a></li>
+                    <li><a href="#process-filter">2. 连接面板里的进程过滤与规则命中调试</a></li>
+                    <li><a href="#relay">3. 代理链 relay：让流量走两跳节点</a></li>
+                    <li><a href="#route-exclude">4. TUN 模式下的路由排除与接口绑定</a></li>
+                    <li><a href="#nameserver-policy">5. DNS 的 nameserver-policy 与 fallback-filter</a></li>
+                    <li><a href="#external-api">6. 外部控制 API：用脚本自动切换节点</a></li>
+                    <li><a href="#file-provider">7. 本地文件型 rule-provider：版本管理的乐趣</a></li>
+                    <li><a href="#bonus">8. 附加彩蛋：几个不常被提起的开关</a></li>
+                </ul>
+            </div>
+
+            <div class="article-content">
+                <h2 id="config-preprocess">🧪 配置预处理：订阅后的二次加工</h2>
+                <p>很多人导入机场订阅后就直接用了，但订阅返回的配置往往包含大量冗余规则和不符合自己习惯的策略组。Clash Verge Rev 允许你在“配置”页面右键点击某个订阅，选择“编辑”，然后对订阅返回的 YAML 进行“预处理”——不过更高级的玩法是在订阅 URL 后面添加参数，让机场服务器返回你定制的配置。但如果你不想依赖机场，可以在本地配置目录里放一个 <code>parser.js</code> 之类的脚本，通过 <code>cfw-parser</code> 或 <code>prepend/append</code> 字段来修改订阅内容。</p>
+                <p>具体来说，在 Clash Verge Rev 的订阅编辑界面，你可以设置“预处理命令”，比如用 <code>sed</code> 或 <code>awk</code> 对拉取到的 YAML 进行文本替换。或者更简单的方法：使用“配置文件合并”功能，把你自己的规则和 DNS 设置放在一个本地 YAML 片段里，订阅更新时自动覆盖到机场配置上。这个功能对于需要保持本地修改不被覆盖的用户来说简直是救星，详细原理可以结合 <a href="subscription-update.html" target="_blank">订阅更新时间</a> 那篇文章来看。</p>
+                <p>我常用的一个预处理技巧是：自动移除订阅里的 <code>MATCH,DIRECT</code> 兜底规则，替换成自己的 <code>MATCH,🚀 代理</code>。这样即使机场更新了配置，也不会出现某些国外网站突然走直连的情况。这个可以通过在订阅编辑框里添加一行 <code>sed -i 's/MATCH,DIRECT/MATCH,🚀 代理/g'</code> 实现，非常实用。</p>
+
+                <h2 id="process-filter">🔍 连接面板里的进程过滤与规则命中调试</h2>
+                <p>Clash Verge Rev 从 v2.5.2 开始引入了连接面板，v2.5.3 又加入了按进程名过滤的功能。这个功能藏得比较深：你需要先打开连接面板，然后在搜索框旁边找到一个下拉菜单，可以选择“按域名过滤”或者“按进程过滤”。很多用户不知道这个面板除了看流量还能用来调试规则。</p>
+                <p>举个例子，你发现某个应用没有走代理，但规则里明明写了 <code>DOMAIN-SUFFIX,example.com,🚀 代理</code>。这时候打开连接面板，过滤出该应用的进程名（比如 <code>chrome.exe</code>），就能看到它发出的所有连接请求，包括目标域名、命中的规则、使用的节点。如果规则命中的是 <code>DIRECT</code>，说明你的规则写错了或者优先级被其他规则覆盖了。你还可以结合 <a href="../rule.html" target="_blank">Rule 模式详解</a> 里的规则调试工具来验证。</p>
+                <p>这个小功能对于排查“为什么这个网站打不开”或者“为什么这个软件能联网但很慢”特别有效，比盲目改规则快多了。唯一需要注意的是，进程过滤在不同平台上的进程名格式不同，Windows 上通常是 <code>.exe</code> 结尾，macOS 和 Linux 上则是纯名称。</p>
+
+                <h2 id="relay">🔗 代理链 relay：让流量走两跳节点</h2>
+                <p>大多数用户只用过 <code>select</code>、<code>url-test</code>、<code>fallback</code> 和 <code>load-balance</code> 这几种策略组，但 Mihomo 内核其实还支持 <code>relay</code> 类型。所谓 relay，就是让流量先经过一个节点，再从这个节点转发到另一个节点，相当于“套娃”。这在某些特殊场景下非常有用，比如你的机场节点无法直接访问某些网站，但可以通过另一个中转节点绕过。</p>
+                <p>配置方法是在 <code>proxy-groups</code> 中定义一个类型为 <code>relay</code> 的策略组，然后在 <code>proxies</code> 字段里填写第一个节点，再在 <code>proxies</code> 的 <code>use</code> 或直接引用第二个节点。具体语法如下：</p>
+                <div class="code-block">
+<span class="comment"># 定义中转节点</span>
+<span class="key">proxies:</span>
+  - <span class="key">name:</span> <span class="value">"入口节点"</span>
+    <span class="key">type:</span> <span class="value">vmess</span>
+    ...
+  - <span class="key">name:</span> <span class="value">"出口节点"</span>
+    <span class="key">type:</span> <span class="value">ss</span>
+    ...
+<span class="comment"># 定义 relay 策略组</span>
+<span class="key">proxy-groups:</span>
+  - <span class="key">name:</span> <span class="value">"两跳节点"</span>
+    <span class="key">type:</span> <span class="value">relay</span>
+    <span class="key">proxies:</span>
+      - <span class="value">入口节点</span>
+      - <span class="value">出口节点</span>
+    <span class="key">use:</span> <span class="value">[]</span>
+                </div>
+                <p>这个功能并不在图形界面中直接暴露，需要手动编辑配置文件。但如果你经常需要“线路A->线路B”的组合，这个绝对值得一试。注意 relay 会增加延迟，因为数据需要经过两个节点，通常只用于特殊用途。另外，<code>url-test</code> 策略组也有一个隐藏参数 <code>tolerance</code>，用来设置延迟容差值，避免频繁切换节点，这里也一并提一下。</p>
+
+                <h2 id="route-exclude">🛣️ TUN 模式下的路由排除与接口绑定</h2>
+                <p>开启 TUN 模式后，所有流量都会经过虚拟网卡。但有时候你不想让某些 IP 段走代理，比如公司内网、打印机、或者某些需要直连的局域网设备。Clash 的 <code>tun</code> 配置里有一个 <code>route-exclude-address</code> 字段，可以指定哪些 IP 段不经过 TUN。这个功能在 Clash Verge Rev 的图形界面里没有直接暴露，但你可以手动在配置文件中添加。</p>
+                <p>一个典型场景是：你的电脑同时连接着公司 VPN 和 Clash 的 TUN，VPN 的内网 IP 段（比如 <code>10.10.0.0/16</code>）应该走物理网卡，而不是 Clash 的虚拟网卡。这时候就可以这样配置：</p>
+                <div class="code-block">
+<span class="key">tun:</span>
+  <span class="key">enable:</span> <span class="value">true</span>
+  <span class="key">stack:</span> <span class="value">wfp</span>
+  <span class="key">auto-route:</span> <span class="value">true</span>
+  <span class="key">route-exclude-address:</span>
+    - <span class="value">10.10.0.0/16</span>
+    - <span class="value">192.168.1.0/24</span>
+                </div>
+                <p>另一个有用的字段是 <code>strict-route</code>，它可以防止其他程序修改路由表，保证 TUN 的优先级。如果你在 Windows 上遇到 VPN 和 Clash 冲突，可以试试开启这个。另外，<code>device</code> 字段可以绑定特定的物理网卡，比如你有多个网卡（无线和有线），想让 Clash 只接管某一块网卡的流量。这些参数都能在 <a href="../enable-tun.html" target="_blank">TUN 模式文章</a> 里找到更完整的说明。</p>
+
+                <h2 id="nameserver-policy">🕵️ DNS 的 nameserver-policy 与 fallback-filter</h2>
+                <p>Clash 的 DNS 配置里面，<code>nameserver-policy</code> 是一个被很多人忽略的超级工具。它允许你对不同的域名指定不同的 DNS 服务器，比如国内域名用国内 DNS，国外域名用 Cloudflare。这个功能在 <a href="../dns.html" target="_blank">DNS 配置指南</a> 里也提到过，但实际使用的人不多。</p>
+                <p>举个例子，你可以设置 <code>'+.cn': 'https://doh.pub/dns-query'</code>，让所有 <code>.cn</code> 结尾的域名走国内加密 DNS，其他域名走 <code>https://cloudflare-dns.com/dns-query</code>。这样一来，国内网站的解析速度会更快，同时避免了 DNS 污染。还有 <code>fallback-filter</code> 字段，它用来决定什么时候使用 <code>fallback</code> 服务器。默认情况下，当主 DNS 返回的 IP 被判定为污染时，才会使用 fallback。你可以通过 <code>geoip</code> 和 <code>ipcidr</code> 参数来自定义判断条件。</p>
+                <p>我自己在配置里还加了一个 <code>fallback-filter</code> 的过滤规则，只有当域名包含 <code>google</code> 或 <code>youtube</code> 时才启用 fallback，其他情况直接使用主 DNS，这样可以减少 DNS 查询的延迟。这些小参数都在配置文件的 <code>dns</code> 段里，图形界面下可能没有直接入口，需要手动编辑。</p>
+
+                <h2 id="external-api">🤖 外部控制 API：用脚本自动切换节点</h2>
+                <p>Clash Verge Rev 内置了一个 RESTful API，默认监听在 <code>127.0.0.1:9090</code>。你可以在设置里开启外部控制，然后使用脚本调用 API 来执行各种操作，比如切换节点、重载配置、查看日志等。这个功能对于喜欢自动化的用户来说非常强大，也是很多第三方面板（如 Metacubexd）的实现基础。</p>
+                <p>我自己写过一个简单的脚本，每天早上 8 点自动切换到延迟最低的节点，并发送通知。核心命令是 <code>curl -X PUT http://127.0.0.1:9090/proxies/🚀%20自动选择</code>，然后在请求体里指定节点名。如果需要更复杂的逻辑，可以结合 <code>jq</code> 解析 JSON 响应。</p>
+                <p>这个 API 的另一个用途是和系统事件联动。比如在 Windows 上可以创建一个计划任务，当电脑从睡眠恢复时，自动重新连接代理。如果你对脚本编写不熟悉，可以参考 <a href="subscription-update.html" target="_blank">订阅更新时间</a> 那篇文章里提到的 cron 示例，思路是一样的。另外，也有现成的命令行工具 <code>clashctl</code> 可以简化操作，但自己写脚本更灵活。</p>
+
+                <h2 id="file-provider">📁 本地文件型 rule-provider：版本管理的乐趣</h2>
+                <p>Rule Provider 除了可以远程加载，还支持从本地文件读取。你只需将 <code>type</code> 设置为 <code>file</code>，并指定 <code>path</code> 即可。这个功能很适合那些喜欢用 Git 管理配置的用户。你可以把规则文件放在配置目录下的 <code>rules</code> 文件夹里，然后用 Git 追踪这些文件的变化，实现规则集的版本控制。</p>
+                <p>具体配置方法如下：</p>
+                <div class="code-block">
+<span class="key">rule-providers:</span>
+  <span class="key">my_local_rules:</span>
+    <span class="key">type:</span> <span class="value">file</span>
+    <span class="key">path:</span> <span class="value">./rules/my_rules.yaml</span>
+                </div>
+                <p>然后在 <code>rules</code> 字段里使用 <code>RULE-SET,my_local_rules,DIRECT</code>。这样你可以在本地用任何文本编辑器编辑规则文件，修改后点击重载配置即可生效，完全脱离了远程依赖。配合 <a href="multi-device-sync.html" target="_blank">多设备同步</a> 里的 Git 工作流，你甚至可以做到在手机上提交规则更新，桌面端自动同步。</p>
+
+                <h2 id="bonus">🎁 附加彩蛋：几个不常被提起的开关</h2>
+                <p>最后再分享几个零散的小功能，它们可能藏在配置文件的角落，或者设置界面的某个不起眼的位置，但都能带来实际的好处：</p>
+                <ul style="margin-bottom: 1.5rem; padding-left: 1.5rem;">
+                    <li><strong><code>log-level: debug</code></strong>：当遇到疑难杂症时，把日志级别调到 debug 可以看到更多的连接细节。平时保持 <code>info</code> 或 <code>warning</code> 即可，debug 会产生大量日志文件。</li>
+                    <li><strong><code>interface-name</code></strong>：在节点配置里可以指定走哪块物理网卡，适合多网卡环境。</li>
+                    <li><strong><code>routing-mark</code></strong>：在 Linux 上使用，配合 ip rule 可以做更精细的策略路由。</li>
+                    <li><strong>配置文件的 <code>profile</code> 字段</strong>：可以给配置加一个备注名称，方便在配置列表中区分。</li>
+                </ul>
+                <p>这些功能虽然不如前面几个那么“重量级”，但在特定环境下非常管用。如果你对某个功能感兴趣，建议去 <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/wiki" target="_blank" rel="noopener">GitHub Wiki</a> 或者 <a href="../faq.html" target="_blank">常见问题</a> 页面找更详细的说明。</p>
+            </div>
+
+            <h3 style="font-size: 1.5rem; margin: 2.5rem 0 1rem;">📖 继续阅读</h3>
+            <div class="related-links">
+                <a href="../configuration.html" class="related-link-card">
+                    <h4>📘 配置教程</h4>
+                    <p>配置文件完全解析</p>
+                </a>
+                <a href="../enable-tun.html" class="related-link-card">
+                    <h4>🔌 开启 TUN 模式</h4>
+                    <p>全局代理与虚拟网卡</p>
+                </a>
+                <a href="../dns.html" class="related-link-card">
+                    <h4>🌐 DNS 配置</h4>
+                    <p>加密 DNS 与防污染</p>
+                </a>
+                <a href="rule-provider-guide.html" class="related-link-card">
+                    <h4>📦 Rule Provider 实战</h4>
+                    <p>远程规则集管理</p>
+                </a>
+                <a href="subscription-update.html" class="related-link-card">
+                    <h4>⏰ 订阅更新时间</h4>
+                    <p>interval 设置与坑点</p>
+                </a>
+                <a href="../faq.html" class="related-link-card">
+                    <h4>❓ 常见问题</h4>
+                    <p>更多使用疑难解答</p>
+                </a>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="main-wrapper">
+            <p>&copy; 2026 Clash Verge Rev 官网下载中心. 所有技术内容基于社区公开文档，仅供学习与测试。请遵守当地法律法规。</p>
+        </div>
+    </footer>
+
+</body>
+</html>
