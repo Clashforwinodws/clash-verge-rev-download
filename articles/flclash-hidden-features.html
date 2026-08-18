@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlClash 很少人知道的功能：七个藏在 Android 菜单深处的实用技巧</title>
+    <meta name="description" content="FlClash 作为 Android 端最活跃的 Mihomo 客户端之一，界面简洁但功能其实深不可测。按应用代理、WiFi 自动切配置、局域网共享、通知栏小组件、配置备份与恢复、UDP 转发控制、URL 测试的隐藏参数——这些功能藏得深，却能在关键时候帮你大忙。本文把这些私藏用法全部摊开。">
+    <meta name="keywords" content="FlClash, FlClash 功能, FlClash 隐藏功能, Android 代理客户端, Mihomo Android, 按应用代理, 局域网共享, UDP 转发, 配置自动切换">
+    <link rel="icon" type="image/x-icon" href="../favicon.ico">
+    <link rel="shortcut icon" type="image/x-icon" href="../favicon.ico">
+    <link rel="canonical" href="https://classhvverge.org/articles/flclash-hidden-features.html">
+    <link rel="stylesheet" href="../index2.css">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "TechArticle",
+      "headline": "FlClash 很少人知道的功能：七个藏在 Android 菜单深处的实用技巧",
+      "description": "挖掘 FlClash 中较少被讨论的实用功能，包括按应用代理、WiFi 自动切换配置、局域网共享、通知栏小组件、备份恢复、UDP 转发控制等。",
+      "author": { "@type": "Organization", "name": "Clash Verge Rev 社区" },
+      "datePublished": "2026-08-18",
+      "dateModified": "2026-08-18",
+      "mainEntityOfPage": { "@type": "WebPage", "@id": "https://classhvverge.org/articles/flclash-hidden-features.html" }
+    }
+    </script>
+    <style>
+        :root {
+            --brand-dark: #0f172a;
+            --brand-blue: #3b82f6;
+            --brand-blue-hover: #2563eb;
+            --text-main: #334155;
+            --text-title: #1e293b;
+            --bg-light: #ffffff;
+            --bg-accent: #f8fafc;
+            --border-line: #cbd5e1;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+            --shadow-md: 0 8px 24px rgba(0,0,0,0.1);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            color: var(--text-main);
+            line-height: 1.75;
+            background-color: var(--bg-light);
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem 6%;
+            background: var(--brand-dark);
+            color: #ffffff;
+            position: sticky;
+            top: 0;
+            z-index: 2000;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #ffffff;
+            text-decoration: none;
+            flex-shrink: 0;
+        }
+        .logo img { width: auto; height: 38px; margin-right: 12px; display: block; }
+        .nav-box { display: flex; align-items: center; flex-wrap: wrap; gap: 0.75rem; }
+        nav { display: flex; align-items: center; flex-wrap: wrap; gap: 0.35rem; }
+        nav a {
+            margin-left: 0.5rem;
+            text-decoration: none;
+            color: #cbd5e1;
+            font-size: 0.93rem;
+            transition: color 0.2s;
+            white-space: nowrap;
+            padding: 0.25rem 0.35rem;
+            border-radius: 4px;
+        }
+        nav a:hover { color: var(--brand-blue); background-color: rgba(255,255,255,0.05); }
+        nav a.nav-active { color: var(--brand-blue); font-weight: 600; background-color: rgba(59,130,246,0.1); }
+        .github-btn {
+            display: inline-flex;
+            align-items: center;
+            background-color: var(--brand-blue);
+            color: #ffffff;
+            padding: 0.55rem 1.1rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            text-decoration: none;
+            margin-left: 1.5rem;
+            transition: background-color 0.2s;
+            font-weight: 500;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .github-btn:hover { background-color: var(--brand-blue-hover); }
+        .github-btn svg { width: 16px; height: 16px; margin-right: 6px; fill: currentColor; }
+
+        .article-wrapper { max-width: 860px; margin: 0 auto; padding: 3rem 6%; }
+        .article-header { text-align: center; padding: 3rem 0 2rem; }
+        .article-header h1 { font-size: 2.5rem; color: var(--brand-dark); margin-bottom: 1rem; line-height: 1.3; }
+        .article-meta {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            color: #64748b;
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+        .article-meta span { display: flex; align-items: center; gap: 0.3rem; }
+        .featured-image {
+            width: 100%; height: 300px;
+            background: #f1f5f9;
+            border: 2px dashed #94a3b8;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+            font-size: 0.95rem;
+            margin-bottom: 2.5rem;
+        }
+        .article-content h2 {
+            font-size: 1.9rem;
+            color: var(--brand-dark);
+            margin: 2.5rem 0 1rem;
+            border-left: 5px solid var(--brand-blue);
+            padding-left: 1rem;
+        }
+        .article-content h3 {
+            font-size: 1.5rem;
+            color: var(--text-title);
+            margin: 2rem 0 0.8rem;
+        }
+        .article-content p { margin-bottom: 1.2rem; font-size: 1.05rem; color: #334155; }
+        .code-block {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 1.5rem;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            margin: 1.5rem 0;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        .code-block .key { color: #93c5fd; }
+        .code-block .value { color: #fbbf24; }
+        .code-block .comment { color: #94a3b8; }
+        .tip-box {
+            background: #f0f9ff;
+            border-left: 5px solid var(--brand-blue);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+        }
+        .tip-box strong { color: #0f172a; }
+        .info-box {
+            background: #fff7ed;
+            border-left: 5px solid #f97316;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+        }
+        .info-box strong { color: #7c2d12; }
+        .compare-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            border: 1px solid var(--border-line);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .compare-table th {
+            background: #f1f5f9;
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--brand-dark);
+        }
+        .compare-table td {
+            padding: 0.8rem 1rem;
+            border-top: 1px solid #e2e8f0;
+        }
+        .compare-table tr:hover { background: #f8fafc; }
+        .related-links {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+        .related-link-card {
+            background: #fff;
+            border: 1px solid var(--border-line);
+            border-radius: 10px;
+            padding: 1.2rem;
+            text-decoration: none;
+            color: var(--text-main);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .related-link-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+        .related-link-card h4 { font-size: 1.1rem; color: var(--brand-dark); margin-bottom: 0.3rem; }
+        .related-link-card p { font-size: 0.85rem; color: #64748b; }
+        .table-of-contents {
+            background: #f8fafc;
+            border: 1px solid var(--border-line);
+            border-radius: 10px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 2rem;
+        }
+        .table-of-contents h3 { margin-bottom: 0.8rem; font-size: 1.2rem; color: var(--brand-dark); }
+        .table-of-contents ul { list-style: none; columns: 2; column-gap: 2rem; }
+        .table-of-contents li { margin-bottom: 0.4rem; }
+        .table-of-contents a { color: var(--brand-blue); text-decoration: none; font-weight: 500; }
+        .table-of-contents a:hover { text-decoration: underline; }
+        footer {
+            background: #020617;
+            color: #94a3b8;
+            padding: 4rem 6%;
+            text-align: center;
+            font-size: 0.9rem;
+            border-top: 1px solid #1e293b;
+            margin-top: 3rem;
+        }
+        @media (max-width: 768px) {
+            header { flex-direction: column; gap: 1rem; padding: 1.25rem 5%; }
+            .nav-box { flex-direction: column; gap: 1rem; width: 100%; align-items: center; }
+            nav { justify-content: center; flex-wrap: wrap; gap: 0.4rem; }
+            nav a { margin: 0 0.3rem; font-size: 0.88rem; }
+            .github-btn { margin-left: 0; }
+            .article-header h1 { font-size: 1.9rem; }
+            .table-of-contents ul { columns: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="../index.html" class="logo">
+            <img src="../logo.webp" alt="Clash verge rev 官网" width="160" height="38">
+            <span>Clash Verge 官网</span>
+        </a>
+        <div class="nav-box">
+            <nav>
+                <a href="../download.html">客户端下载</a>
+                <a href="../install.html">安装教程</a>
+                <a href="../configuration.html">配置教程</a>
+                <a href="../faq.html">常见问题</a>
+                <a href="../changelog.html">更新日志</a>
+                <a href="index.html" class="nav-active">文章中心</a>
+                <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/wiki">📚 文档</a>
+            </nav>
+            <a href="https://github.com/Clashforwinodws/clash-verge-rev-download/" class="github-btn" target="_blank" rel="noopener noreferrer">
+                <svg viewBox="0 0 16 16" version="1.1" aria-hidden="true"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+                GitHub 仓库
+            </a>
+        </div>
+    </header>
+
+    <main class="article-wrapper">
+        <article>
+            <div class="article-header">
+                <h1>FlClash 很少人知道的功能：七个藏在 Android 菜单深处的实用技巧</h1>
+                <div class="article-meta">
+                    <span>📅 2026-08-18</span>
+                    <span>🏷️ 移动端技巧</span>
+                    <span>⏱️ 阅读约 15 分钟</span>
+                </div>
+            </div>
+
+            <div class="featured-image">
+                [ FlClash 隐藏设置截图拼贴 ]
+            </div>
+
+            <div class="table-of-contents">
+                <h3>📑 本文目录</h3>
+                <ul>
+                    <li><a href="#intro">1. 从 Clash for Android 换过来的第一周</a></li>
+                    <li><a href="#auto-profile">2. WiFi 与移动数据自动切换配置</a></li>
+                    <li><a href="#per-app">3. 按应用代理：让某些应用直连，其他走代理</a></li>
+                    <li><a href="#lan-share">4. 局域网共享代理：手机变随身网关</a></li>
+                    <li><a href="#widget-notification">5. 通知栏与桌面小组件的快捷操作</a></li>
+                    <li><a href="#backup-restore">6. 备份与恢复：换机不折腾</a></li>
+                    <li><a href="#udp">7. UDP 转发的精细控制</a></li>
+                    <li><a href="#url-test">8. URL 测试的隐藏参数与自动切换</a></li>
+                    <li><a href="#final">9. 写在最后</a></li>
+                </ul>
+            </div>
+
+            <div class="article-content">
+                <h2 id="intro">📱 从 Clash for Android 换过来的第一周</h2>
+                <p>我用过的 Android 代理客户端不算少，从最早的 Shadowsocks 到后来的 V2RayNG、Clash for Android，再到现在的 FlClash。说实话，Clash for Android 停更之后，我试了四五个替代品，最后留下的是 FlClash——不是因为它的 UI 多花哨，而是它在一些细节上比别的客户端更知道“用户真正需要什么”。但这些东西往往藏在菜单很深的角落里，不翻几次根本发现不了。我大概用了一个多星期才把这些功能全部摸清，有些还是从 GitHub Issue 里看到别人提到才注意到。</p>
+                <p>这篇文章就是来分享这些容易被忽略的功能。FlClash 和 Clash Verge Rev 的内核同出一脉（都是 <a href="../mihomo.html" target="_blank">Mihomo</a>），所以很多思路和桌面端是相通的。如果你在桌面端用 Verge，手机端用 FlClash，配置文件和规则几乎可以通用，这种一致性让我省了很多心思。关于两者搭配使用的思路，我之前在 <a href="stash-vs-clashverge.html" target="_blank">Stash 与 Verge 对比</a> 那篇里也提到过。</p>
+
+                <h2 id="auto-profile">🔀 WiFi 与移动数据自动切换配置</h2>
+                <p>这是我目前最常用的功能之一，也是很多人不知道的。FlClash 支持根据当前网络环境自动切换配置文件。比如我在家连的是自己的 WiFi，宽带本身能直连一些国外网站，这时候可以让 FlClash 切换到一套“直连为主”的配置；而出门用移动数据时，自动切回“全局代理”的配置。</p>
+                <p>设置位置在“配置”页面 → 长按某个配置文件 → 选择“关联网络”。你可以为每个 WiFi 网络和移动数据单独指定不同的配置文件。这样的话，你完全不需要手动切换——回到家连上 WiFi，FlClash 自动帮你换好；出门断开 WiFi，又自动切回来。这个功能在官方文档里只有一小段描述，很多人根本没注意到。但它对于家里有软路由、公司有专线的用户来说，简直是救星。</p>
+                <p>一个小细节：切换配置时，FlClash 会有一个短暂的网络中断，大约 2-3 秒。如果你正在打电话或者视频会议，建议不要在配置切换的瞬间依赖网络。不过日常刷网页、看视频几乎感知不到。</p>
+                <div class="tip-box">
+                    <strong>💡 进阶：</strong> 如果你想让移动数据也区分“5G 和 4G 不同配置”，目前 FlClash 还不支持这么细。但它支持“漫游状态”的单独匹配，对于经常出国的用户，可以给漫游状态指定一个低延迟节点配置。
+                </div>
+
+                <h2 id="per-app">🎯 按应用代理：让某些应用直连，其他走代理</h2>
+                <p>在 Android 上，Clash 客户端的 VPN 模式一般会接管所有应用的流量。但你可能不想让某个应用走代理，比如银行类 App 走代理反而容易触发风控，或者国内视频 App 走代理反而更卡。FlClash 很贴心地提供了一个“应用分流”功能，可以精确控制每个应用是否走代理。</p>
+                <p>在“设置” → “应用分流”里，你可以看到一个应用列表，每个应用后面有三个选项：<strong>代理</strong>、<strong>直连</strong>、<strong>跟随全局</strong>。默认所有应用都是“跟随全局”，你可以把银行、支付宝、微信这些应用单独设为“直连”，让它们完全绕过代理。这个功能在 Clash Verge Rev 桌面端对应的是 <code>PROCESS-NAME</code> 规则，但 FlClash 把它做成了可视化界面，方便多了。如果你在桌面端也想要类似效果，可以看 <a href="../rule.html" target="_blank">Rule 模式详解</a> 里的 <code>PROCESS-NAME</code> 用法。</p>
+                <p>还有一个小技巧：对于某些需要“部分走代理、部分直连”的应用（比如浏览器访问国外网站走代理，访问国内网站直连），不要用应用分流把它设成直连，因为这样它所有流量都直连了。正确做法是保持“跟随全局”，然后在规则里做精细化的域名分流。</p>
+
+                <h2 id="lan-share">📡 局域网共享代理：手机变随身网关</h2>
+                <p>当你在酒店或者朋友家，没有路由器翻墙，但有其他设备（比如 Switch、电视盒子、笔记本电脑）需要走代理，FlClash 可以帮你把手机变成一个小小的代理网关。开启“局域网共享”后，FlClash 会在手机上监听一个端口（默认 HTTP 7890、SOCKS 7891），局域网内的其他设备把代理地址设成手机的 IP 就可以上网了。</p>
+                <p>设置位置在“设置” → “局域网共享”，打开开关后记得看一下端口和授权设置。你可以设置一个访问密码，避免别人蹭你的代理。这个功能和 Clash Verge Rev 桌面端的“允许局域网连接”是一回事，只不过跑在了手机上。如果你同时用手机和电脑，建议把电脑端的局域网共享也打开，这样手机没电的时候电脑也能继续当网关。桌面端的操作可以参考 <a href="../enable-tun.html" target="_blank">TUN 模式配置</a> 里的相关说明。</p>
+                <p>一个实际场景：我出差的时候带着一台 iPad（只有 WiFi 版）和一台安卓手机。酒店 WiFi 没翻墙，我就用手机开 FlClash，iPad 的代理设置指向手机 IP，直接就能访问 Google Docs。整个过程不用任何额外的硬件。</p>
+
+                <h2 id="widget-notification">🔔 通知栏与桌面小组件的快捷操作</h2>
+                <p>FlClash 的通知栏快捷方式和桌面小组件做得相当用心，但很多人在安装后直接关掉了通知权限，完全没体验过。实际上，展开通知栏的下拉菜单里，你可以直接看到当前节点、连接状态，并且可以一键切换代理模式、切换节点、测试延迟。在通知栏点击“切换”按钮，它会弹出一个小型的节点选择器，完全不用打开 App。</p>
+                <p>桌面小组件则是另一个玩法。FlClash 提供了几种尺寸的小组件，最小的 1x1 小组件就是一个开关按钮，点击一下就切换 TUN 模式；更大的 2x2 小组件还能显示当前节点名称和网速。对于把手机当主力代理设备的用户，在桌面放一个小组件，出门看一眼就知道有没有掉线。</p>
+                <p>还有一个藏在设置里的“快速启动”功能：你可以给特定节点或配置创建桌面快捷方式，直接点击就切换过去。长按桌面 → 添加 FlClash 快捷方式，就能找到这个入口。这个功能在别的客户端里几乎没见过。</p>
+
+                <h2 id="backup-restore">💾 备份与恢复：换机不折腾</h2>
+                <p>换手机时最怕的就是代理配置全部要重来。FlClash 内置了一个比较完善的备份功能，在“设置” → “备份与恢复”里，你可以导出一个 ZIP 包，里面包含了所有配置文件、规则集、日志、以及应用的设置项。换新手机后，把这个 ZIP 包导入 FlClash，一切恢复原样。</p>
+                <p>不过有个小坑：备份文件里包含了你的订阅链接和节点信息，如果这个 ZIP 包被别人拿到，就等于把你的代理资源全部暴露了。所以备份文件一定不要上传到公共网盘，最好放在加密的私有存储里。如果你有多设备同步的需求，除了用 FlClash 的备份，还可以结合 <a href="multi-device-sync.html" target="_blank">Git 同步方案</a>，把配置文件本身放在私有仓库里管理，比 ZIP 备份更安全。</p>
+                <p>另外，FlClash 也支持手动导出单个配置文件为 <code>.yaml</code> 文件，这个功能用来和桌面端 Clash Verge Rev 互换配置非常方便。你在电脑上调好的规则，导出成 YAML，传到手机里导入 FlClash，两边体验保持统一。</p>
+
+                <h2 id="udp">⚡ UDP 转发的精细控制</h2>
+                <p>UDP 转发的问题可能是移动端代理最容易忽视的一环。很多用户会发现，用 FlClash 的时候，微信语音通话、FaceTime、或者一些游戏会出现卡顿甚至连不上，但看网页、刷视频完全正常。这往往就是 UDP 转发没有正确配置。</p>
+                <p>FlClash 在“设置”里有一个“UDP 转发”的开关，默认是开启的。但真正关键的是你的节点本身是否支持 UDP。很多机场节点在配置文件里会默认把 <code>udp: true</code> 显式声明，有些则没有。如果你的节点不支持 UDP 转发，即使客户端开关打开也没用。这时候你可以在配置文件中手动添加 <code>udp: true</code> 到对应节点，或者切换到其他支持 UDP 的节点。</p>
+                <p>还有一个更细的选项：在 FlClash 的“高级设置”里，你可以选择 UDP 转发模式——<strong>原生 UDP</strong> 还是 <strong>UDP over TCP</strong>。原生 UDP 延迟低，但某些网络环境下会被防火墙或运营商 QoS 限制；UDP over TCP 更稳定，但延迟会高一些。如果你在移动数据下遇到 UDP 丢包严重的情况，不妨试试 UDP over TCP 模式。</p>
+                <p>关于 UDP 的更多配置细节，可以结合 <a href="../enable-tun.html" target="_blank">TUN 模式</a> 中的 <code>udp</code> 相关参数来理解，FlClash 的底层也是走的同一套逻辑。</p>
+
+                <h2 id="url-test">📊 URL 测试的隐藏参数与自动切换</h2>
+                <p>FlClash 的“节点测试”功能看起来很直观：点一下测速按钮，所有节点开始跑延迟测试，然后按延迟排序。但大部分人不知道，测试的 URL 是可以自定义的。在“设置” → “URL 测试”里，你可以把默认的 <code>http://www.gstatic.com/generate_204</code> 改成任何你想要的地址。这对于某些特殊场景很有用：比如你只关心到某个特定服务器的延迟（比如 ChatGPT 的端点），就可以把测试 URL 改成 <code>https://chat.openai.com/favicon.ico</code>，这样 FlClash 在自动选择节点时就会优先选择到 ChatGPT 延迟最低的节点。</p>
+                <p>另外，策略组的“自动选择”模式（<code>url-test</code>）也有一个隐藏参数 <code>tolerance</code>，用来设置延迟容差值。默认情况下，只要某个节点延迟比当前节点低，就会切换过去。但这样可能造成频繁切换。如果在配置文件的策略组里加上 <code>tolerance: 50</code>，意思是只有当新节点比当前节点快 50ms 以上时才切换，大大减少了无谓的节点切换。这个参数在 FlClash 的图形界面里没有直接入口，需要手动编辑配置文件。你可以在 <a href="../configuration.html" target="_blank">配置教程</a> 里找到 <code>url-test</code> 策略组的完整参数说明。</p>
+
+                <div class="info-box">
+                    <strong>⚠️ 注意：</strong> 如果测试 URL 填的是 <code>https://chat.openai.com</code>，而你的当前配置无法访问 ChatGPT（比如节点被 OpenAI 屏蔽），那么测试结果会显示超时，自动选择策略组会排除这些节点。这其实是个好消息，说明它真的在帮你筛选可用节点。
+                </div>
+
+                <h2 id="final">✍️ 写在最后</h2>
+                <p>FlClash 的魅力不在于它有多少花哨的功能，而在于这些功能都藏在合适的位置，在你需要的时候刚好能找到。很多用户只是把它当作一个“点开就能翻墙”的工具，但如果花点时间把这些隐藏设置摸透，你会发现它完全可以当做一个完善的网络管理平台来用。</p>
+                <p>如果你是从其他客户端迁移过来的，建议先把 <a href="../import-subscription.html" target="_blank">导入订阅</a> 这篇看一遍，然后慢慢熟悉 FlClash 的配置结构。遇到问题的时候，<a href="../faq.html" target="_blank">常见问题</a> 页面里已经整理了大量移动端场景的解决方案。当然，FlClash 作为一个活跃的开源项目，它的 GitHub 仓库和 Issue 讨论区也是很好的学习资源，项目地址你可以在 <a href="https://github.com/Clashforwinodws/clash-verge-rev-download" target="_blank" rel="noopener">这里</a> 找到。</p>
+            </div>
+
+            <h3 style="font-size: 1.5rem; margin: 2.5rem 0 1rem;">📖 继续阅读</h3>
+            <div class="related-links">
+                <a href="../mihomo.html" class="related-link-card">
+                    <h4>🧬 Mihomo 内核解析</h4>
+                    <p>了解共同的内核基础</p>
+                </a>
+                <a href="../import-subscription.html" class="related-link-card">
+                    <h4>📥 导入订阅</h4>
+                    <p>订阅链接导入与管理</p>
+                </a>
+                <a href="../configuration.html" class="related-link-card">
+                    <h4>📘 配置教程</h4>
+                    <p>配置文件详细解析</p>
+                </a>
+                <a href="../rule.html" class="related-link-card">
+                    <h4>📋 Rule 模式</h4>
+                    <p>规则匹配与分流逻辑</p>
+                </a>
+                <a href="../enable-tun.html" class="related-link-card">
+                    <h4>🔌 TUN 模式</h4>
+                    <p>全局代理接管教程</p>
+                </a>
+                <a href="stash-vs-clashverge.html" class="related-link-card">
+                    <h4>📱💻 Stash 与 Verge 对比</h4>
+                    <p>移动端与桌面端的选择</p>
+                </a>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="main-wrapper">
+            <p>&copy; 2026 Clash Verge Rev 官网下载中心. 所有技术内容基于社区公开文档，仅供学习与测试。请遵守当地法律法规。</p>
+        </div>
+    </footer>
+
+</body>
+</html>
